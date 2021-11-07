@@ -1,0 +1,55 @@
+#
+# root_poset - the partial order of positive roots
+#
+# Calling sequence:
+#  root_poset(R);
+#
+# Parameters:
+#  R = a root system data structure
+#
+# The positive roots of a root system R may be partially ordered in
+# several natural ways. If R is crystallographic, this procedure returns
+# the partial order in which r1 < r2 if r2 - r1 is a sum of positive roots.
+#
+# If R is not crystallographic, the procedure returns the partial order
+# obtained from the transitive closure of all relations of the form
+# r < s(r) where s ranges over the simple reflections such that s(r)-r
+# is a positive multiple of the corresponding simple root.
+#
+# In all cases, the output is an "abstract" Hasse diagram compatible with
+# the posets package; i.e., it consists of the set of ordered pairs [i,j]
+# such that the i-th root of pos_roots(R) is covered by the j-th root.
+#
+# Examples:
+#  with(coxeter):
+#  P:=root_poset(B3);
+#  with(posets,plot_poset):       # this requires the posets package
+#  plot_poset(P);
+#  f:=(r,R) -> cat(op(root_coords(r,R)));
+#  rc:=table(map(f,pos_roots(B3),B3));
+#  plot_poset(P,labels=rc);
+#
+root_poset:=proc(R) local S,res,i,s,pr,j,r,EPS;
+  S:=coxeter['base'](R); res:=NULL;
+  pr:=coxeter['pos_roots'](R);
+  if type(S,'list'('polynom'('rational'))) then 
+    for i to nops(pr) do
+      for s in S do
+        if member(pr[i]+s,pr,'j') then res:=res,[i,j] fi;
+      od
+    od
+  else EPS:=`coxeter/default`['epsilon'];
+    for i to nops(pr) do
+      for s in S do
+        if coxeter['iprod'](s,pr[i])<-EPS then
+          r:=coxeter['reflect'](s,pr[i]);
+          for j from i+1 to nops(pr) do
+            if convert(map(abs,[coeffs(pr[j]-r)]),`+`)<EPS then break fi
+          od;
+          res:=res,[i,j]
+        fi
+      od
+    od
+  fi; {res}
+end;
+ 

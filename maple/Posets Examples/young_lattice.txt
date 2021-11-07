@@ -1,0 +1,84 @@
+#
+# young_lattice - Young's lattice
+#
+# Calling sequence:
+#  young_lattice(n);   young_lattice(n,'T');
+#  young_lattice(mu);  young_lattice(mu,'T');
+#  young_lattice(L);   young_lattice(L,'T');
+#
+# Parameters:
+#  n  = a nonnegative integer
+#  mu = a partition
+#  L  = a list of partitions
+#  T  = a name
+#
+# IMPORTANT: This requires the SF package.
+#
+# Young's lattice is the set of all number partitions, partially ordered
+# by inclusion of Young diagrams. That is, the vertices are lists of
+# non-increasing positive integers, and the partial ordering is such that
+# nu <= mu whenever nu[i] <= mu[i] for all i.
+#
+# young_lattice(n) returns the covering relation of a poset isomorphic to
+# the rank n truncation of Young's lattice.
+#
+# If mu is a partition (i.e., a non-increasing list of positive integers),
+# young_lattice(mu) returns the covering relation of a poset isomorphic to
+# the subposet of Young's lattice formed by all partitions <= mu.
+#
+# If L is a list of partitions, then young_lattice(L) returns the covering
+# relation of a poset isomorphic to the subposet of Young's lattice formed
+# by all partitions nu <= some member of L.
+#
+# Optionally, if the second argument is an unassigned name, this name will
+# be assigned a table of vertex labels suitable for use by 'plot_poset'.
+#
+# Examples:
+#  with(posets); with(SF,Par);
+#
+#  L:=young_lattice(6,'T');
+#  plot_poset(L,labels=T,proportional);
+#  lattice(L,'semi');                       #verify that L is a semi-lattice
+#
+#  L:=young_lattice([4,3,2],'T');
+#  plot_poset(L,labels=T);
+#  distributive(L,'Irr'),Irr;                 #verify that L is distributive
+#  P:=subposet(L,Irr);
+#  plot_poset(P,Irr,labels=T);       #display the poset of join irreducibles
+#
+#  L:=young_lattice(Par(8,4),'T');
+#  plot_poset(L,labels=T,proportional);
+#
+young_lattice:=proc(n) local X,P,sat,i,j,mu,nu,m;
+  if type(n,'integer') then X:=SF['Par'](n)
+    elif type(n,'list(integer)') then X:=[n]
+    elif type(n,'list(list(integer))') then X:=n
+    else ERROR(`invalid arguments`) fi;
+  P:=NULL; sat:=0; m:=nops(X);
+  while sat<m do
+    sat:=sat+1; mu:=X[sat];
+    for i to nops(mu) do
+      if i=nops(mu) or mu[i]>mu[i+1] then
+        nu:=subs(0=NULL,subsop(i=mu[i]-1,mu));
+        if not member(nu,X,'j') then X:=[op(X),nu]; m:=m+1; j:=m fi;
+        P:=P,[j,sat]
+      fi
+    od
+  od;
+  if nargs>1 then assign(args[2],
+    table([seq(`young_lattice/name`(X[-i]),i=-m..-1)])) fi;
+  P:=subs({seq(i=m+1-i,i=1..m)},{P});
+  if nops(X)>1 then P else {},1 fi;
+end;
+#
+# Generate a nice label of type 'string' for the partition mu.
+#
+`young_lattice/name`:=proc(mu) local i,j,m,s;
+  i:=0; m:=0; s:=NULL;
+  for j in [op(mu),-1] do
+    if j=i then m:=m+1; next fi;
+    if m<3 then s:=cat(s,i$m) else s:=cat(s,i,`^`,m) fi;
+    m:=1; i:=j
+  od; s
+end:
+

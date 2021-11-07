@@ -1,0 +1,67 @@
+#
+# coset_reps - minimum-length coset representatives for a parabolic subgroup
+# coset_gf   - length generating function for shortest coset representatives
+#
+# Calling sequence:
+#  coset_reps(J,R);
+#  coset_gf(J,R);
+#  coset_gf(J,R,z);
+# 
+# Parameters:
+#  R = a root system data structure
+#  J = a list or set of integers in the range 1..n (n = rank(R))
+#  z = (optional) a variable or expression
+#
+# In each form, J selects a set of generators for a parabolic subgroup W(R')
+# of W(R), following the indexing used by base(R).
+#
+# coset_reps(J,R) returns a list of reduced expressions for the elements of
+# minimum length in each left coset xW(R'). 
+#
+# coset_gf(J,R,z) returns the length generating function in the variable z
+# for these elements. If the third argument is omitted, q is the default.
+#
+# Examples:
+#  with(coxeter):
+#  coset_reps([2,3],B3);
+#  coset_gf([1,2,3],F4);
+#
+coset_reps:=proc(J,R) local S,n,v,i,u,c,EPS,is_mem,old,new,nreps,reps;
+  S:=coxeter['base'](R); n:=nops(S);
+  if type(S,'list'('polynom'('rational'))) then  # xtal
+    EPS:=0; is_mem:=(x,y,z)->member(x,y)
+  else  # non-xtal
+    EPS:=`coxeter/default`['epsilon'];
+    is_mem:=proc(v,L,ep) local u; for u in L do if
+      convert(map(abs,[coeffs(u-v)]),`+`)<ep then RETURN(true) 
+      fi od; false
+    end
+  fi;
+  v:=convert([seq(c[i]*S[i],i=1..n)],`+`);
+  v:=collect(v,[op(indets(S))]);
+  u:=subsop(seq(i=0,i=J),[1$n]);
+  new:={seq(coxeter['iprod'](S[i],v)=u[i],i=1..n)};
+  new:=[subs(`coxeter/linsolve`(new,indets(new)),v)];
+  nreps:=[]; reps:=NULL;
+  while nops(new)>0 do
+    old:=zip((x,y)->[x,y],new,[nreps]);
+    reps:=reps,nreps; new:=[]; nreps:=NULL;
+    for u in old do
+      for i to n do
+        if coxeter['iprod'](S[i],u[1])>EPS then
+          v:=coxeter['reflect'](S[i],u[1]);
+          if not is_mem(v,new,EPS) then
+            new:=[op(new),v]; nreps:=nreps,[i,op(u[2])]
+          fi
+        fi
+      od
+    od
+  od; [reps]
+end;
+#
+coset_gf:=proc(J,R) local i,S,z,f;
+  S:=coxeter['base'](R); S:=[seq(S[i],i=J)];
+  f:=normal(coxeter['length_gf'](R,z)/coxeter['length_gf'](S,z));
+  if nargs>2 then subs(z=args[3],f) else subs(z=q,f) fi;
+end;
+ 

@@ -1,0 +1,84 @@
+#
+# weight_order - the partial order of dominant weights
+#
+# Calling sequence:
+#  weight_order(v,R,m);
+#  weight_order(v,R,m,'wts');
+#
+# Parameters:
+#  R = a crystallographic root system data structure
+#  v = a dominant integral weight (linear combination of e1,e2,...)
+#  m = an integer, or  -infinity
+#
+# IMPORTANT: This requires the posets package
+#
+# The dominant (integral) weights of a crystallographic root system are
+# partially ordered by the rule that v > u if v - u is an integral sum of
+# positive roots. The set of dominant weights that occur with positive
+# multiplicity in the irreducible representation of LieAlg(R) with highest
+# weight v (i.e., weight_sys(v,R)) consists of the set of dominant weights
+# u such that u <= v in this order. The partial order has f connected
+# components, where f=index(R), and each connected component has either 0
+# or a minuscule weight as its minimum element.
+#
+# If m is a *positive* integer, the weight_order function returns an
+# abstract poset structure (in the format used by the posets package)
+# isomorphic to the subposet of dominant weights u >= v whose height 
+# above v is at most m, where height(u) = iprod(u-v,co_rho(R)).
+#
+# If m is a *negative* integer or -infinity, the weight_order function
+# returns an abstract poset isomorphic to the subposet of dominant
+# weights u <= v whose height below v is at most -m.
+#
+# If a fourth argument is present, it is assigned a list consisting of the
+# weights appearing in the poset, so that the i-th vertex of the poset is
+# the i-th weight in the list.
+#
+# Examples:
+#  with(weyl): with(posets,plot_poset):
+#  R:=C4; w:=weights(R):
+#  P:=weight_order(0,R,17,'wts');
+#  f:=v -> cat(op(weight_coords(v,R)));
+#  wc:=table(map(f,wts));
+#  plot_poset(P,labels=wc,title=R);
+#
+#  with(coxeter):
+#  P:=weight_order(w[4],R,20,'wts');
+#  g:=(v,u) -> cat(op(root_coords(v-u,R)));
+#  rc:=table(map(g,wts,w[4]));
+#  plot_poset(P,labels=rc,title=cat(R,`[0001]`),stretch=0.5);
+#
+#  R:=F4; w:=weights(R):
+#  P:=weight_order(2*w[3],R,-infinity,'wts');
+#  wc:=table(map(f,wts));
+#  plot_poset(P,labels=wc,title=R,stretch=0.25);
+#  ht:=table(map(iprod,wts,co_rho(R)));
+#  plot_poset(P,labels=ht,title=cat(R,`[0020]`),stretch=0.25);
+#
+weight_order:=proc(v0,R) local m,P,coS,i,j,pr,nrwc,v,wres,res,sat,Rho,n;
+  coS:=coxeter['co_base'](R); pr:=`weyl/lsdpr`(R);
+  Rho:=weyl['co_rho'](R); m:=args[3];
+  if m=-infinity then m:=-coxeter['iprod'](v0,Rho) fi;
+  if m<0 then pr:=map(x->-x,pr); Rho:=-Rho fi;
+  nrwc:=[seq(map(coxeter['iprod'],coS,-i),i=pr)];
+  wres:=[map(coxeter['iprod'],coS,v0)];
+  P:=NULL; res:=[v0]; n:=nops(coS);
+  for sat while sat<=nops(res) do
+    for i to nops(pr) do
+      for j to n while wres[sat][j]>=nrwc[i][j] do od;
+      if j>n then v:=res[sat]+pr[i];
+        if coxeter['iprod'](v-v0,Rho)<=abs(m) then
+          if not member(v,res,'j') then
+            res:=[op(res),v]; j:=nops(res);
+            wres:=[op(wres),zip((x,y)->x-y,wres[sat],nrwc[i])]
+          fi;
+          P:=P,[sat,j]
+        fi
+      fi
+    od
+  od;
+  if nargs>3 then assign(args[4],res) fi;
+  if m<0 then P:=posets['dual']({P}) else P:={P} fi;
+  posets['covers'](P);
+end;
+

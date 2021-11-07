@@ -1,0 +1,66 @@
+#
+# dcoset_reps - minimum-length double coset representatives for a pair of
+#               parabolic subgroups
+# ndcosets    - number of double cosets for a pair of parabolic subgroups
+#
+# Calling sequence:
+#  dcoset_reps(K,J,R);
+#  ndcosets(K,J,R);
+# 
+# Parameters:
+#   R  = a root system data structure
+#  K,J = lists or sets of integers in the range 1..n (n = rank(R))
+#
+# Both K and J select sets of generators for parabolic subgroups W(R_K) and
+# W(R_J) of W(R), following the indexing used by base(R).
+#
+# dcoset_reps(K,J,R) returns the list of lexicographically-first reduced
+# expressions for the elements of minimum length in each of the double
+# cosets W(R_K) \ W(R) / W(R_J).
+#
+# ndcosets(K,J,R) computes the number of double cosets.
+#
+# Examples:
+#  with(coxeter):
+#  dcoset_reps([2,3,4],[2,3,4],B4);
+#  ndcosets({1,2},{3,4},F4);
+#
+dcoset_reps:=proc(K,J,R) local S,SK,n,pr,pts,sat,reps,c,u,v,w,r,i,is_mem,EPS;
+  S:=coxeter['base'](R); SK:=[seq(S[i],i=K)];
+  pr:=coxeter['pos_roots'](S); n:=nops(S);
+  if type(S,'list'('polynom'('rational'))) then
+    EPS:=0; is_mem:=(x,y,z)->member(x,y)
+  else
+    EPS:=`coxeter/default`['epsilon'];
+    is_mem:=proc(v,L,ep) local u; for u in L do if
+      convert(map(abs,[coeffs(u-v)]),`+`)<ep then RETURN(true) 
+      fi od; false
+    end
+  fi;
+  v:=convert([seq(c[i]*S[i],i=1..n)],`+`);
+  v:=collect(v,[op(indets(S))]);
+  u:=subsop(seq(i=0,i=J),[1$n]);
+  u:={seq(coxeter['iprod'](S[i],v)=u[i],i=1..n)};
+  pts:=[subs(`coxeter/linsolve`(u,indets(u)),v)];
+  reps:=[]; sat:=0;
+  while sat<nops(pts) do
+    sat:=sat+1; v:=pts[sat];
+    for r in pr do
+      if coxeter['iprod'](r,v)<=EPS then next fi;
+      u:=coxeter['reflect'](r,v);
+      if not is_mem(u,pts,EPS) then
+        if min(op(map(coxeter['iprod'],SK,u)))<-EPS then next fi;
+        coxeter['vec2fc'](u,S,'w');
+        pts:=[op(pts),u]; reps:=reps,w
+      fi
+    od
+  od;
+  sort([reps],(u,v)->evalb(nops(u)<=nops(v)))
+end;
+#
+ndcosets:=proc(K,J,R) local pi;
+  pi:=coxeter['perm_char'](K,R);
+  if K=J then pi:=pi,pi else pi:=pi,coxeter['perm_char'](J,R) fi;
+  coxeter['cprod'](pi,R)
+end;
+

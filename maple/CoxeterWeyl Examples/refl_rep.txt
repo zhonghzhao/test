@@ -1,0 +1,46 @@
+#
+# refl_rep - matrices for the reflection representation
+#
+# Calling sequence:
+#  refl_rep(w,R);
+#  refl_rep(w,R,b);
+#
+# Parameters:
+#  R = a root system data structure
+#  w = a list of integers representing an element of W(R)
+#  b = (optional) a list of independent vectors (linear combinations of
+#        e1,e2,...) whose span contains base(R)
+#
+# This procedure returns the representing matrix, with respect to the
+# basis b, for the product of the reflections indexed by w. If the third
+# argument is omitted, base(R) is the default basis.
+#
+# Examples:
+#  with(coxeter):
+#  map(refl_rep,[[1],[2],[3]],B3);
+#  refl_rep([1,2,3],A3,[e1,e2,e3,e4]);
+#
+refl_rep:=proc(w,R) local vars,c,v0,Col,Basis,S,M,v,i,eq;
+  S:=coxeter['base'](R);
+  if nargs>2 then Basis:=args[3] else Basis:=S fi;
+  if nops(Basis)=0 then RETURN() fi;
+  Col:=seq(c[i],i=1..nops(Basis));
+  v0:=convert(zip((x,y)->x*y,Basis,[Col]),`+`);
+  M:=NULL; vars:=[op(indets(Basis))];
+  if nops(Basis)=nops(vars) or
+    type([op(S),op(Basis)],'list'('polynom'('rational'))) then
+    for v in Basis do
+      eq:=collect(coxeter['reflect'](seq(S[i],i=w),v)-v0,vars);
+      eq:=`coxeter/linsolve`({coeffs(eq,vars)},{Col});
+      M:=M,subs(eq,[Col])
+    od
+  else
+    for v in Basis do
+      eq:=collect(coxeter['reflect'](seq(S[i],i=w),v)-v0,vars);
+      eq:={seq(coxeter['iprod'](i,eq),i=Basis)};
+      M:=M,subs(`coxeter/linsolve`(eq,{Col}),[Col])
+    od
+  fi;
+  linalg['transpose'](array([M]))
+end;
+

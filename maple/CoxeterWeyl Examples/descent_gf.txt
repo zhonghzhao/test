@@ -1,0 +1,54 @@
+#
+# descent_gf - descent generating function for a (finite) Coxeter group
+#
+# Calling sequence:
+#  descent_gf(R);
+#  descent_gf(R,t);	descent_gf(R,T);
+#  descent_gf(R,t,q);	descent_gf(R,T,q);
+#
+# Parameters:
+#   R  = a root system data structure
+#  t,q = variables or expressions
+#   T  = a list of n variables or expressions, where n=rank(R).
+#
+# Let s_1,s_2,... denote generators for the Coxeter group W(R). The (right)
+# descent set of an element w in W(R) is defined to be
+#                      D(w)={i: length(w*s_i)<length(w)}.
+# The number of descents (i.e., the cardinality of D(w)) is denoted d(w).
+#
+# descent_gf(R,t) returns the generating function for d(.) over W(R); i.e.,
+# the sum of t^d(w) for all w in W(R). If the second argument is omitted,
+# then t is used by default.
+#
+# If the second argument is a list T=[T[1],...,T[n]], then descent_gf(R,T)
+# returns the generating function for descent *sets* over W(R); i.e., the
+# sum over W(R) in which each w with descent set {i_1,...,i_k} contributes
+# the monomial T[i_1]*...*T[i_k].
+#
+# If a third argument q is present, then the result is a sum over W(R) in
+# which w contributes the monomial t^d(w) * q^length(w) or the monomial
+# T[i_1]*...*T[i_k] * q^length(w), respectively. The result is collected
+# with respect to the variables appearing in T or t.
+#
+# Examples:
+#  with(coxeter):
+#  descent_gf(F4);        descent_gf(B3,[a,b,c]);
+#  descent_gf(A2^2,z);    descent_gf(G2,[a,b],q);
+#
+descent_gf:=proc(R) local n,vars,res,M,J,i,q,lgf,f;
+  M:=coxeter['cox_matrix'](R); n:=coxeter['rank'](M);
+  if nargs=1 then vars:=[t$n]
+    elif type(args[2],'list') then vars:=args[2]
+    else vars:=[args[2]$n]
+  fi;
+  if nargs=3 then q:=args[3] else q:=1 fi;
+  lgf:=coxeter['length_gf'](R,q);
+  res:=convert(vars,`*`)*lgf; J:=[$1..n];
+  while nops(J)>0 do
+    f:=normal(lgf/coxeter['length_gf'](linalg['submatrix'](M,J,J),q));
+    res:=res+convert(subsop(seq(i=1-vars[i],i=J),vars),`*`)*f;
+    J:=subsop(1=(seq(i,i=1..J[1]-1)),J)
+  od;
+  collect(res,indets(vars),'distributed');
+end;
+

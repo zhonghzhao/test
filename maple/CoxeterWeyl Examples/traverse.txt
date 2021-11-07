@@ -1,0 +1,104 @@
+#
+# traverse - iterate over the elements of a Coxeter group or quotient
+#
+# Calling sequence:
+#  traverse(R,iv,<options>,f);
+#
+# Parameters:
+#  R  = a root system data structure
+#  iv = an initial value
+#  f  = a procedure
+# Options: zero or more of the following, in any order:
+#  (1) length=<integer>, where m is a nonnegative integer
+#  (2) orbit=<vector>, where <vector> is a dominant vector (a linear
+#      combination of e1,e2,...)
+#
+# The traverse function provides a very space-efficient mechanism for
+# searching through or iterating over the elements of a finite Coxeter
+# group, parabolic quotient, or Coxeter group orbit.
+#
+# When called with arguments (R,iv,f), the procedure begins by choosing
+# a point v0 in the interior of the fundamental chamber, and assigns the
+# value iv to a local variable 'res'. Then for each group element w
+# in W(R), it performs the assignment
+#
+#   res := f(res,w,v,R);
+#
+# where v is the corresponding vector in the W(R)-orbit of v0; i.e., w.v0.
+# This allows a running total to be accumulated over all points v or all
+# group elements w. The particular expression for w chosen in each case is
+# the first reduced expression in lexicographic order. When the loop is
+# finished, it returns the final value assigned to 'res'.
+# 
+# If u0 is a dominant vector and the optional argument 'orbit=u0' is
+# supplied, then the same calculation is performed for the W(R)-orbit of
+# u0 instead of v0. In this case, the elements w range over shortest coset
+# representatives for W(R)/W(R'), where W(R') denotes the stabilizer of u0.
+#
+# If m is a nonnegative integer and the optional argument 'length=m' is
+# supplied, then the search is restricted to those pairs (w,v) such that
+# w has length at most m (i.e., nops(w) <= m).
+#
+# Any additional parameters a,b,... that appear after f in the argument
+# list supplied to 'traverse', are passed on to f. In other words, for each
+# pair w,v, the loop calculation is  res := f(res,w,v,R,a,b,...).
+#
+# Debugging note: it is important that f always return a non-NULL value 
+# (in fact, an expression sequence of length 1); otherwise, subsequent
+# invocations of f will get confused when parsing arguments.
+#
+# Examples:
+#  with(coxeter):
+#
+#  f:=proc(a) print(args); a+1 end;
+#  traverse(A3,0,f);
+#  traverse(A3,0,'orbit'=e3+e4,f);
+#  
+#  traverse(E6,0,length=10,(a,w)->a+q^nops(w));
+#
+#  f:=proc(a,w) local i; a+convert([seq(s[i],i=w)],`*`) end;
+#  traverse(F4,0,length=4,f);
+#  traverse(D5,0,'orbit'=e4+2*e5,length=10,f);
+#
+traverse:=proc(R,iv)
+  local res,st,S,r,v,n,w,f,N,Ht,Cstack,Wstack,cc,i,j,k,ref,EPS;
+  interface(quiet=true); st:=time();
+  S:=coxeter['base'](R); Ht:=1; res:=iv;
+  w:=[]; v:=coxeter['interior_pt'](S); ref:=x->x;
+  EPS:=-`coxeter/default`['epsilon'];
+  for n from 3 to nargs do
+    if type(args[n],'procedure') then f:=args[n]; n:=n+1; break
+      elif op(1,args[n])='orbit' then v:=op(2,args[n]);
+        ref:=proc(a,z,T,y) if coxeter['iprod'](T[a],z)>y then a fi end
+      elif op(1,args[n])='length' then Ht:=-op(2,args[n])
+    fi
+  od;
+  Cstack:=table([Ht=0]); Wstack:=table();
+  N:=`weyl/neighbor`(S,{},EPS); i:=nops(S)+1;
+  do
+    res:=f(res,w,v,R,args[n..nargs]);
+    if Ht=0 then cc:=[] else
+      cc:=map(ref,[$1..i-1],v,S,-EPS);
+      for j in N[i] do k:=j;
+        for r in N[i,j] do
+          if coxeter['iprod'](r,v)<EPS then k:=NULL; break fi
+        od; cc:=[op(cc),k];
+      od
+    fi;
+    if nops(cc)=0 then
+      do cc:=Cstack[Ht];
+        if nops(cc)=0 then Ht:=Ht-1 else break fi
+      od;
+      if cc=0 then break fi;
+      r:=Wstack[Ht]; w:=[cc[1],op(r[1])];
+      v:=coxeter['reflect'](S[cc[1]],r[2]);
+    else
+      Ht:=Ht+1; Wstack[Ht]:=w,v;
+      w:=[cc[1],op(w)]; v:=coxeter['reflect'](S[cc[1]],v);
+    fi;
+    Cstack[Ht]:=subsop(1=NULL,cc); i:=w[1];
+  od;
+  userinfo(2,'traverse',`Running Time:`,time()-st);
+  interface(quiet=false); res
+end;
+

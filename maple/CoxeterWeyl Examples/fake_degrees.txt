@@ -1,0 +1,59 @@
+#
+# fake_degrees - fake degrees of a finite reflection group
+#
+# Calling sequence:
+#  fake_degrees(R);
+#  fake_degrees(R,z);
+#
+# Parameters:
+#  R = a root system data structure
+#  z = (optional) a variable name
+#
+# Let V denote the reflection representation of W(R). The W-invariant part
+# of the symmetric algebra S(V) is a polynomial ring with free generators
+# of degrees d_1,...,d_n, and the quotient of S(V) by the ideal I generated
+# by invariants of positive degree is the co-invariant algebra of W(R).
+#
+# As a W(R)-module, the co-invariant algebra S(V)/I is isomorphic to the
+# regular representation of W(R). For each irreducible character chi of
+# W(R), the "fake degree" corresponding to chi is defined to be the
+# Poincare series F(chi,q) = Sum m_i(chi)*q^i, where m_i(chi) denotes
+# the multiplicity of chi in the degree i part of S(V)/I.
+#
+# In some cases, F(chi,q) is the dimension of an irreducible character
+# of a finite algebraic group over GF(q). (Hence the term "fake degree".)
+#
+# fake_degrees(R,z) returns a list consisting of the fake degrees for W(R)
+# in the variable z. The ordering of the list follows the one used by the
+# 'irr_chars' function in the coxeter package.  If the second argument is
+# omitted, the default is q.
+#
+# Examples:
+#  with(coxeter):
+#  fd:=fake_degrees(D4);
+# Determine the lowest degree where each irrep occurs:
+#  map(ldegree,fd);
+#
+#  fd:=fake_degrees(H3,z);
+#  map(factor,fd);
+#
+fake_degrees:=proc(R) local S,dg,i,cp,w,z;
+  if nargs>1 then z:=args[2] else z:=q fi;
+  S:=coxeter['base'](R);
+  dg:=convert([seq(1-z^i,i=coxeter['degrees'](S))],`*`);
+  cp:=[seq(quo(dg,coxeter['char_poly'](w,S,z),z),w=coxeter['class_rep'](S))];
+  if type(S,'list'('polynom'('rational'))) then
+    map(coxeter['cprod'],coxeter['irr_chars'](S),cp,S)
+  else
+    [seq(`fake_degrees/rd`(coxeter['cprod'](evalf(w),cp,S),z),
+      w=coxeter['irr_chars'](S))]
+  fi
+end;
+#
+`fake_degrees/rd`:=proc(f,a) local t,cfs,g;
+  cfs:=[coeffs(f,a,'t')];
+  g:=convert(zip((x,y)->round(x)*y,cfs,[t]),`+`);
+  if max(op(map(abs,[coeffs(f-g)])))<`coxeter/default`['epsilon']/10
+    then g else ERROR(`increase the value of Digits and recompute`) fi;
+end;
+ 

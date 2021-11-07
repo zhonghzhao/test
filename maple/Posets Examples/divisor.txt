@@ -1,0 +1,36 @@
+#
+# divisor - lattice of divisors of an integer
+#
+# Calling sequence:
+#  divisor(n);
+#
+# Parameters:
+#  n = a nonzero integer
+#
+# The divisor lattice of a nonzero integer n is the set of positive divisors
+# of n, partially ordered by divisibility.
+#
+# divisor(n) returns the covering relation of the lattice of divisors of n.
+#
+# Examples:
+#  with(posets);
+#  L:=divisor(180);
+#  plot_poset(L,labels);
+#  lattice(L);                      #verify that L is a lattice
+#  distributive(L,'Irr'),Irr;       #verify that L is distributive
+#  P:=subposet(L,Irr);              #extract the poset of join irreducibles
+#
+# Verify that P is a disjoint union of chains of sizes 2,2,1):
+#  isom(P,Irr,chain(2) &u chain(2) &u chain(1));
+#
+# Examine a few entries of the Mobius function:
+#  M:=mobius(L): M[1,6],M[1,9],M[1,30];
+#
+divisor:=proc() local n,d,X,edge,p;
+  n:=abs(args); if n=1 then RETURN({},1) fi;
+  if not type(n,'posint') then ERROR(`invalid input`) fi;
+  X:=numtheory['divisors'](n);
+  edge:=proc(i,m) if irem(m,i)=0 then [m/i,m] fi end;
+  {seq(seq(edge(p,d),d=X),p=numtheory['factorset'](n))};
+end;
+

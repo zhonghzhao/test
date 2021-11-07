@@ -1,0 +1,82 @@
+#
+# weak_order - weak ordering (and Cayley graph) of a finite Coxeter group
+#
+# Calling sequence:
+#  weak_order(R,<options>);
+#
+# Parameters:
+#    R  = a root system data structure
+# The optional arguments are any of the following, in any order:
+#    m  = a nonnegative integer
+#    w  = a list of integers representing an element of W(R)
+#  T,cl = an unassigned name and a list of n color names (n=rank(R)).
+#
+# The (left) weak ordering of W(R) is the partial order in which y <= x*y
+# for all x,y in W(R) such that length(x*y) = length(x) + length(y).
+#
+# The weak_order function returns the covering relation of an abstract poset
+# isomorphic to the weak order of W(R), in the format used by the posets
+# package. This covering relation is also the Cayley graph of W(R).
+#
+# If an optional group element w is specified, the subinterval of the weak
+# order from w to w0 (the longest element) is returned.
+#
+# If an optional integer m is specified, the poset is truncated at rank m.
+#
+# If an unassigned name and a list of n=rank(R) color names are specified,
+# then the name will be assigned a table suitable for use by the plot_poset
+# function of the posets package. The indices of the table are the color
+# names, with the entry of the i-th color name being the set of covering
+# relations of the weak order corresponding to the i-th generator.
+#
+# Examples (assuming that the posets package is installed):
+#  with(coxeter): with(posets,plot_poset):
+#  P:=weak_order(B3,[red,green,yellow],'CG');
+#  plot_poset(P,ecolor=CG,title=`The Cayley Graph of B3`);
+#
+#  P:=weak_order(H3,7,'CG',[blue,red,green]):
+#  plot_poset(P,ecolor=CG);
+#
+#  P:=weak_order(F4,[2,3,2,3]):       #the quotient F4/B2
+#  plot_poset(P,stretch=2/3);
+#
+weak_order:=proc(R) local n,w,S,v,old,new,i,j,k,p,q,m,c,clrs,EPS,is_mem;
+  S:=coxeter['base'](R);
+  w:=[]; m:=coxeter['num_refl'](R);
+  for i from 2 to nargs do
+    if type(args[i],'list'('integer')) then w:=args[i]
+      elif type(args[i],'list') then clrs:=args[i]
+      elif type(args[i],'integer') then m:=args[i]
+      elif type(args[i],'name') then n:=i
+    fi
+  od;
+  if type(S,'list'('polynom'('rational'))) then  # xtal
+    is_mem:=proc(v,L) member(v,L,args[4]) end
+  else  # non-xtal
+    EPS:=`coxeter/default`['epsilon'];
+    is_mem:=proc(v,L,ep) local s; for s to nops(L) do if
+      convert(map(abs,[coeffs(L[s]-v)]),`+`)<ep then assign(args[4],s);
+      RETURN(true) fi od; false
+    end
+  fi;
+  v:=coxeter['interior_pt'](S);
+  old:=[coxeter['reflect'](seq(S[i],i=w),v)];
+  p:=0; c:=table([seq(i=NULL,i=1..nops(S))]);
+  while m>0 do
+    new:=[]; q:=nops(old)+p;
+    for j to nops(old) do
+      for i to nops(S) do
+        if coxeter['iprod'](S[i],old[j])<0 then next fi;
+        v:=coxeter['reflect'](S[i],old[j]);
+        if not is_mem(v,new,EPS,'k') then new:=[op(new),v]; k:=nops(new) fi;
+        c[i]:=c[i],[p+j,q+k];
+      od
+    od;
+    if nops(new)=0 then break fi;
+    p:=p+nops(old); old:=new; m:=m-1;
+  od;
+  if type(n,'integer') then
+    assign(args[n],table([seq(clrs[i]={c[i]},i=1..nops(S))])) fi;
+  map(op,{entries(c)});
+end;
+

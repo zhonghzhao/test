@@ -1,0 +1,63 @@
+#
+# ct_redex - count reduced expressions for a group element
+#
+# Calling sequence:
+#  ct_redex(w,R);
+#  ct_redex(w,R,'all');
+#
+# Parameters:
+#  R = a root system data structure
+#  w = a list of integers representing an element of W(R)
+# 
+# This procedure counts the number of reduced expressions for an element w
+# of the (finite) Coxeter group W(R).
+#
+# If a third argument is present, then the number of such expressions is
+# computed for every element x <= w in the right weak order of W(R) (i.e.,
+# for all x such that w = x*y for some y with l(w) = l(x)+l(y)). The output
+# is a list of the form [[n_1,w_1],...,[n_l,w_l]], where n_i denotes the
+# number of reduced expressions for the element w_i.
+#
+# For large problems, the amount of space used will be proportional to the
+# width of the weak order below w (in the first case), or the total number
+# of elements below w (in the second case).
+#
+# Examples:
+#  with(coxeter):
+#  ct_redex(longest_elt(H3),H3);
+#  ct_redex(longest_elt(A3),A3,'all');
+#
+ct_redex:=proc(w,R)
+  local S,coS,v,i,j,k,res,EPS,loc,old,new,wold,wnew,Nold,Nnew;
+  S:=coxeter['base'](R); coS:=coxeter['co_base'](S);
+  if type(S,'list'('polynom'('rational'))) then  # xtal
+    EPS:=0; loc:=proc(v,L) local i;
+      if member(v,L,i) then i else assign(args[4],[op(L),v]); nops(L)+1 fi
+    end
+  else  # non-xtal
+    EPS:=`coxeter/default`['epsilon'];
+    loc:=proc(v,L,ep) local i; for i to nops(L) do if
+      convert(map(abs,[coeffs(L[i]-v)]),`+`)<ep then RETURN(i)
+      fi od; assign(args[4],[op(L),v]); i
+    end
+  fi;
+  v:=coxeter['interior_pt'](S);
+  new:=[coxeter['reflect'](seq(S[i],i=w),v)];
+  wnew:=table([[]]); Nnew:=table([1]); res:=NULL;
+  while nops(new)>0 do
+    old:=new; Nold:=op(Nnew); new:=[]; Nnew:=table('sparse');
+    if nargs>2 then wold:=op(wnew); wnew:=table();
+      res:=res,seq([Nold[j],wold[j]],j=1..nops(old)) fi;
+    for j to nops(old) do
+      for i to nops(S) do
+        v:=coxeter['iprod'](coS[i],old[j]);
+        if v<0 then k:=loc(old[j]-v*S[i],new,EPS,'new');
+          if nargs>2 and Nnew[k]=0 then wnew[k]:=[op(wold[j]),i] fi;
+          Nnew[k]:=Nnew[k]+Nold[j]
+        fi
+      od
+    od
+  od;
+  if nargs>2 then [res] else Nold[1] fi;
+end;  
+

@@ -1,0 +1,32 @@
+#
+# redex - list all reduced expressions for a group element
+#
+# Calling sequence:
+#  redex(w,R);
+#
+# Parameters:
+#  R = a root system data structure
+#  w = a list of integers representing an element of W(R)
+#
+# This procedure lists, in lexicographic order, all reduced expressions for
+# an element w of the (finite) Coxeter group W(R).
+#
+# Example:
+#  with(coxeter):
+#  redex(longest_elt(A3),A3);
+#
+redex:=proc(w,R) local S,v,i;
+  S:=coxeter['base'](R);
+  v:=coxeter['interior_pt'](S);
+  v:=coxeter['reflect'](seq(S[i],i=w),v);
+  `redex/vec`(v,S);
+end;
+#
+`redex/vec`:=proc(v,S) local J,i,w;
+  J:=map(proc(x,y,z) if coxeter['iprod'](y[x],z)<0 then x fi end,
+    [$1..nops(S)],S,v);
+  if nops(J)=0 then [[]] else
+    [seq(seq([i,op(w)],w=procname(coxeter['reflect'](S[i],v),S)),i=J)]
+  fi
+end;
+

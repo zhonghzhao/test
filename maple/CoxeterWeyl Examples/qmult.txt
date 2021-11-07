@@ -1,0 +1,76 @@
+#
+# qmult - q-analogue of weight multiplicities in representations
+#
+# Calling sequence:
+#  qmult(v,R);
+#  qmult(v,u,R);
+#
+# Parameters:
+#   R  = a crystallographic root system data structure
+#  u,v = dominant integral weights (linear combinations of e1,e2,...)
+#
+# There is a polynomial in q associated to each pair of dominant integral
+# weights u and v with u a weight of the irreducible representation of
+# LieAlg(R) of highest weight v (i.e., u a member of weight_sys(v,R)).
+# It was defined originally by Lusztig as a q-analogue of Kostant's weight
+# multiplicity formula, and in particular it gives the dimension of the
+# u-weight space of the representation (i.e., weight_mults(v,u,R)) at q=1.
+# Also, with coefficients reversed, it is a Kazhdan-Lusztig polynomial for
+# the associated affine Weyl group.
+#
+# Reference: R. K. Gupta, J. London Math. Soc. 36 (1987), 68--76.
+#
+# If u and v are dominant weights as above, qmult(v,u,R) returns the 
+# corresponding q-analogue of weight multiplicity. With two arguments,
+# qmult(v,R) computes the q-analogue for each dominant weight u in
+# weight_sys(v,R). The output is expressed as a linear combination of the
+# form  f1*M[w1] + f2*M[w2] + ... , where w1,w2,... are the weight
+# coordinates of the dominant weights that appear, and f1,f2,... are the
+# q-analogues of their weight multiplicities.
+#
+# The algorithm is a slight modification of Broer's algorithm (Indag. Math.
+# 6 (1995), 385--396), and proceeds by solving a triangular system of
+# equations in a space of dimension (1+a1)*(1+a2)*..., where [a1,a2,...]
+# are the simple root coordinates of v - u0, with u0 = u (if u is given),
+# or u0 = the lowest dominant weight in weight_sys(v,R) (otherwise). In
+# particular, the space requirements of the procedure are much greater
+# than those of the 'weight_mults' function in the weyl package.
+#
+# Warning: both M and q are used as global names by this procedure.
+#
+# Examples:
+#  with(coxeter): with(weyl):
+#  qmult(rho(B3),B3);
+#  w:=weights(F4): qmult(w[4],0,F4);
+#
+qmult:=proc(u) local S,wt,wtsys,wts,wc,r0,mu,nu,K,pr,sat,f,r,beta,k,w,J;
+  S:=coxeter['base'](args[nargs]); wt:=weyl['weights'](S);
+  pr:=coxeter['pos_roots'](S); r0:=convert(pr,`+`)/2;
+  if nargs>2 then mu:=args[2];
+    r:=coxeter['root_coords'](u-mu,S);
+    if not type(r,'list'('nonnegint')) then RETURN(0) fi
+  else
+    wtsys:=weyl['weight_sys'](u,S,'wc'); mu:=wtsys[nops(wc)]
+  fi;
+  wts:=[u-mu]; K[wts[1]]:=1;
+  for sat while sat<=nops(wts) do
+    J:=map(proc(x,Y,Z,y) if coxeter['iprod'](Y[x],y)>0 then y-Z[x] fi end,
+      [$1..nops(S)],wt,S,wts[sat]);
+    for nu in J do
+      if member(nu,wts) then next fi;
+      wts:=[op(wts),nu]; f:=0;
+      for r in pr do beta:=nu+r;
+        for k from 0 while member(beta,wts) do
+          f:=f+q^k*K[beta]; beta:=beta+r
+        od
+      od;
+      K[nu]:=int(f,q);
+      if coxeter['vec2fc'](nu+mu+r0,S,'w')=u+r0 then
+        K[nu]:=K[nu]+(-1)^nops(w) fi;
+    od
+  od;
+  if nargs>2 then K[0] else
+    convert([seq(K[wtsys[k]-mu]*M[op(wc[k])],k=1..nops(wc))],`+`)
+  fi
+end;
+

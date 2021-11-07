@@ -1,0 +1,356 @@
+#
+# QF: the Q-functions package, version 0.93, vanilla edition.
+# This version/edition has been tested on
+#   Maple V R3, R4, R5, Maple 6, Maple 7, Maple 9, and Maple 9.5.
+#
+# This is *not* a Maple worksheet.
+#
+# Use read commands to load the vanilla edition of SF first, then this
+# file, into a Maple session. Each package function may then be accessed
+# using the calling sequence
+#
+#   QF[<functionname>](<arguments>).
+#
+# In order to use package functions in the abbreviated form
+#
+#   <functionname>(<arguments>),
+#
+# run the command 'withQF()' after loading this file. If there is a
+# conflict between the names of one of these functions and another name
+# in the same session, a warning is printed.
+#
+# In order to use the abbreviated form for a subset of the procedures in
+# the package, run the command
+#
+#   withQF(<name1>,<name2>,...).
+#
+# Copyright (c) 2005 by John R. Stembridge
+#
+#########################################################################
+#
+QF:=table():
+#
+# assign short names, printing warnings if conflicts occur.
+#
+withQF:=proc() local install,f;global QF;
+  install:=proc(x)
+    if not assigned(QF[x]) then
+      ERROR(cat(x,` is not a top level function in QF`))
+    elif eval(x)<>eval(QF[x]) then
+      if assigned(x) then printf(`Warning: new definition for  %a\n`,x) fi;
+      assign(x,QF[x])
+    fi; x
+  end;
+  if nargs>0 then map(install,[args]) else
+    f:=proc() map(op,[args]) end; # hack the names w/o full evaluation!
+    map(install,f(indices(QF)))
+  fi
+end:
+#
+# char2qf(<classfn>) will apply the spin characteristic to <classfn>,
+# producing symmetric function in the omega-algebra as the output. The
+# <classfn> must be expressed as a linear combination of split 
+# characteristic functions cl[<mu>] for partitions <mu> with odd parts.
+# (All other terms are in the kernel.) The output, by default, is in base p.
+# Use char2qf(<classfn>,b) to specify another output base.
+#
+`QF/char2qf`:=proc(char) local f,sp,i,mu;
+  sp:=SF['varset'](char,'cl[]');
+  sp:=map(proc(x) if modp({1,op(x)},2)={1} then x fi end,sp);
+  f:=convert([seq(coeff(char,cl[op(mu)])*convert(map(x->cat('p',x),mu),`*`)
+    *2^(nops(mu)/2)/SF['zee'](mu),mu=sp)],`+`);
+  if nargs=1 then f 
+    elif args[2]='q' then QF['toddq'](f,'p')
+    elif args[2]='P' or args[2]=P[] then QF['toP'](f,'p')
+    elif args[2]='Q' or args[2]=Q[] then QF['toQ'](f,'p')
+    else `SF/apply`(args[2],f,'p')
+  fi 
+end:
+#
+# DPar(n) returns a list of the partitions of n with Distinct Parts.
+# DPar(n,l) returns the sublist of DPar(n) with length <=l.
+# DPar(n,k,l) returns the sublist of DPar(n) with parts <=k, length <=l.
+#
+`QF/DPar`:=proc(n)
+  if nargs=1 then `QF/DPar/sub`(n,n+1,n)
+    elif nargs=2 then `QF/DPar/sub`(n,n+1,args[2])
+    else `QF/DPar/sub`(n,args[2]+1,args[3])
+  fi
+end:
+#
+`QF/DPar/sub`:=proc(n,row,col) local res,k,m,newstuff;
+  if n=0 then RETURN([[]]) fi;
+  if n<0 or row<2 or col<1 then RETURN([]) fi;
+  m:=min(row-1,col); res:=NULL;
+  if 2*n > m*(2*row-m-1) then RETURN([]) fi;
+  for k from min(n,row-1) by -1 to 1 do
+    newstuff:=`QF/DPar/sub`(n-k,k,col-1);
+    if newstuff=[] then break fi;
+    res:=res,map(proc(x,y) [y,op(x)] end,newstuff,k);
+  od;
+  map(op,[res])
+end:
+#
+# Install the right solver, depending on the version of Maple in use.
+# 
+if type(x(1)[1],'name') then
+  #we are using Maple 7 or earlier
+  `QF/linsolve`:=proc() readlib(`solve/linear`)(args) end
+else
+  `QF/linsolve`:=proc() SolveTools['Linear'](args) end
+fi:
+#
+# OPar(n) returns a list of the partitions of n with Odd Parts.
+# OPar(n,l) returns the sublist of OPar(n) with length <=l.
+# OPar(n,k,l) returns the sublist of OPar(n) with parts <=k, length <=l.
+#
+`QF/OPar`:=proc(n)
+  if nargs=1 then `QF/OPar/sub`(n,n,n)
+    elif nargs=2 then `QF/OPar/sub`(n,n,args[2])
+    else `QF/OPar/sub`(args)
+  fi
+end:
+#
+`QF/OPar/sub`:=proc(n,row,col) local m1,m2,i,mu;
+  if n=0 and col>=0 then RETURN([[]]) fi;
+  if col<=0 then RETURN([]) fi;
+  m1:=min(row,n); m1:=iquo(m1-1,2);
+  m2:=iquo(n+col-1,col); m2:=iquo(m2,2);
+  [seq(seq([1-2*i,op(mu)],mu=`QF/OPar/sub`(n+2*i-1,1-2*i,col-1)),
+    i=-m1..-m2)];
+end:
+#
+# Evaluate the appropriate pfaffian for Q(<lambda>) or the skew
+# Schur Q-function Q(<lambda>,<mu>) (<mu>=inner shape), expressing the
+# result in terms of one and two-rowed Q-functions. 
+#
+`QF/pfaff`:=proc(mu) local nu,l,i,j,mat;
+  if nargs>1 then nu:=args[2] else nu:=[] fi;
+  l:=nops(mu)+nops(nu);
+  if l=0 then RETURN(1) fi;
+  if modp(l,2)=1 then nu:=[op(nu),0]; l:=l+1 fi;
+  mat:=array(1..l,1..l);
+  for i to l do
+    for j from i+1 to nops(mu) do mat[i,j]:=Q[mu[i],mu[j]] od;
+    for j from 1 to nops(nu) do
+      if i>nops(mu) then mat[i,l-j+1]:=0 else
+        mat[i,l-j+1]:=`QF/pfaff/ent`(mu[i]-nu[j]) fi;
+    od
+  od;
+  `QF/pfaff/ian`(mat)
+end:
+#
+`QF/pfaff/ent`:=proc(x) if x>0 then Q[x] elif x=0 then 1 else 0 fi end:
+#
+# If A is an antisymmetric matrix of even dimension, this routine
+# computes the pfaffian using Laplace-type expansions. The only entries
+# of A that need to be defined are those above the main diagonal.
+#
+`QF/pfaff/ian`:=proc(A) local n,i,inds,res;
+  n:=linalg['coldim'](A);
+  if modp(n,2)=1 then ERROR(`matrix has odd dimension`) fi;
+  if n=2 then RETURN(A[1,2]) fi;
+  res:=0;
+  for i to n-1 do
+    inds:=subsop(i=NULL,[$1..n-1]);
+    if A[i,n] <> 0 then res:=res+(-1)^(n-i-1)*A[i,n]*
+      `QF/pfaff/ian`(linalg['submatrix'](A,inds,inds)) fi;
+  od; res
+end:
+#
+# qf2char(f) will apply the (inverse) spin characteristic to a symmetric
+# function f in the omega algebra. The result is expressed as a linear
+# combination of split characteristic functions cl[<mu>] for various
+# partitions <mu> with odd parts.
+#
+`QF/qf2char`:=proc() local f,i,j,d,res,cee,term,mu;
+  f:=QF['toddp'](args); d:=SF['varset'](f,'p');
+  cee:=[coeffs(f,[seq(cat('p',i),i=1..d)],'term')];
+  term:=[term]; res:=0;
+  for i to nops(cee) do
+    mu:=seq((d-j)$(degree(term[i],cat('p',d-j))),j=0..d-1);
+    res:=res+SF['zee']([mu],1/2^(1/2))*cee[i]*cl[mu];
+  od;
+  res
+end: 
+#
+# spin(lambda) will return the class function corresponding to the
+# irreducible spin representation of the symmetric group indexed by
+# lambda (in DPar). In some cases (n - nops(lambda) odd) there are 
+# two representations;
+#
+`QF/spin`:=proc(mu) local f,n,l;
+  n:=convert(mu,`+`); l:=modp(n-nops(mu),2);
+  f:=QF['qf2char'](Q[op(mu)]/2^((nops(mu)+l)/2));
+  if l=0 then f else
+    n:=(-1)^((n-nops(mu)+1)/2)*convert(mu,`*`)/2;
+    f+sqrt(n)*cl[op(mu)]
+  fi
+end:
+#
+# super(f) applies the super-map to symmetric function f, assuming f is
+# expressed in terms of the bases known to SF. The output is a symmetric
+# function in the omega subalgebra involving q.i and p.j.
+#
+# Note: terms in f involving the special bases of QF (i.e., q, Q[], P[])
+# are ignored. They do not get super-ized. (I suppose this is a bug.)
+#
+`QF/super`:=proc() local f,sp,j,mu,d;
+  f:=args[1]; sp:=SF['varset'](f,{'e','h','s[]'});
+  f:=subs({seq(cat('e',j)=cat('q',j),j=1..sp['e'])},f);
+  f:=subs({seq(cat('h',j)=cat('q',j),j=1..sp['h'])},f);
+  f:=subs({seq(s[op(mu)]=linalg['det'](SF['jt_matrix'](mu,[],'q')),
+    mu=sp['s'])},f);
+  f:=SF['top'](f); d:=SF['varset'](f,'p');
+  subs({seq(cat('p',j)=(1-(-1)^j)*cat('p',j),j=1..d)},f);
+end:
+#
+# toddp(f) converts a symmetric function f in the omega algebra into a
+#  polynomial function of p1,p3,p5,...
+# toddp(f,'b'), where 'b' is one of the names q, P[] or Q[], will
+#  assume that f is expressed in base b.
+#
+`QF/toddp`:=proc() local z,i,hack,d,poly,b;
+  if nargs>1 then b:=args[2] else b:=NULL fi;
+  if b<>'q' then  poly:=QF['toq'](args) else poly:=args[1] fi;
+  d:=SF['varset'](poly,'q');
+  hack:=convert([seq(cat('p',i)*(1-(-1)^i)*z^i/i,i=1..d)],`+`);
+  hack:=taylor(exp(hack),z,d+1);
+  poly:=subs({seq(cat('q',i)=coeff(hack,z,i),i=1..d)},poly);
+  collect(poly,[seq(cat('p',i),i=1..d)],'distributed',normal);
+end:
+#
+# toddq(f) converts a symmetric function f in the omega algebra into
+#  a polynomial function of q1,q3,q5,...
+# toddq(f,'b'), where 'b' is one of the names p, P[] or Q[], will
+#   assume that f is expressed in base b.
+#
+# N.B. the representation of f in this form is unique, but it runs
+# slower than 'toq'.
+#
+`QF/toddq`:=proc() local poly,i,j,d;
+  poly:=QF['toq'](args);
+  d:=SF['varset'](poly,'q');
+  for i from iquo(d,2) by -1 to 1 do
+    poly:=subs(cat('q',2*i)=-(-1)^i*cat('q',i)^2/2
+      -convert([seq((-1)^j*cat('q',j)*cat('q',2*i-j),j=1..i-1)],`+`),poly)
+  od;
+  collect(poly,[seq(cat('q',i),i=1..d)],'distributed',normal)
+end:
+#
+# toP(f,<options>)   will convert any symmetric function f in the omega
+#  algebra into a sum of P-functions. The optional arguments are the
+#  same as those supported by 'toQ'.
+#
+`QF/toP`:=proc() local mu,f,sp;
+  f:=QF['toQ'](args); sp:=SF['varset'](f,'Q[]');
+  subs({seq(Q[op(mu)]=2^nops(mu)*P[op(mu)],mu=sp)},f);
+end:
+#
+# toq(f) converts a symmetric function f in the omega algebra into a
+#  polynomial function of q1,q2,q3,...
+# toq(f,'b'), where 'b' is one of the names p, P[] or Q[], will
+#   assume that f is expressed in base b.
+#
+# N.B. the representation of f in this form is not unique, but it
+# has the advantage that it runs faster than 'toddq'.
+#
+`QF/toq`:=proc() local poly,sp,mu,i,f,hack,z,j,d,bases;
+  poly:=args[1];
+  if nargs=1 then bases:={'P[]','Q[]','p'}
+    elif args[2]='P' then bases:={'P[]'}
+    elif args[2]='Q' then bases:={'Q[]'}
+    else bases:={args[2]}
+  fi;
+  if member('P[]',bases) then 
+    sp:=SF['varset'](poly,'P[]');
+    poly:=subs({seq(P[op(mu)]=Q[op(mu)]/2^nops(mu),mu=sp)},poly);
+    bases:=bases minus {'P[]','P'} union {'Q[]'};
+  fi;
+  sp:=SF['varset'](poly,bases);
+  if member('p',bases) and sp['p']>0 then d:=sp['p'];
+    if modp(d,2)=0 then ERROR(`polynomial not in omega algebra`) fi;
+    f:=convert([1,seq(cat('q',i)*z^i,i=1..d)],`+`);
+    hack:=taylor((z/2)*diff(f,z)*subs(z=-z,f),z,d+1);
+    poly:=subs({seq(cat('p',2*i+1)=coeff(hack,z,2*i+1),i=0..(d-1)/2)},poly);
+  fi;
+  if member('Q[]',bases) then
+    sp:=map(proc(x) if nops(x)>2 then x fi end,sp['Q']);
+    poly:=subs({seq(Q[op(mu)]=QF['pfaff'](mu),mu=sp)},poly);
+    sp:=SF['varset'](poly,'Q[]');
+    for mu in sp do
+      if mu=[] then f:=1
+      elif nops(mu)=1 then f:=cat('q',op(mu))
+      else f:=cat('q',mu[1])*cat('q',mu[2])+2*convert(
+        [seq((-1)^j*cat('q',mu[1]+j)*cat('q',mu[2]-j),j=1..mu[2])],`+`)
+      fi;
+      poly:=subs(Q[op(mu)]=f,poly);
+    od;
+    poly:=subs(q0=1,poly);
+  fi;
+  d:=SF['varset'](poly,'q');
+  collect(poly,[seq(cat('q',i),i=1..d)],'distributed',normal);
+end:
+#
+# toQ(f,<options>) will convert a symmetric function f in the omega algebra
+# into a sum of Q-functions. <options> is a sequence of zero or more of the
+# following expressions (in any order):
+# (1) a list of partitions that support the Q-function expansion of f.
+# (2) an equation 'nrows=<integer>', where <integer> is a positive integer
+#     that specifies that all calculations should take place in the ring
+#     spanned by Q-functions with at most <integer> rows.
+# (3) a name 'b' that specifies a basis f is expressed in.
+#
+# WARNING: the code for (2) is experimental. It could fail to find an
+#  answer when combined with (1) in rare (unknown) ways.
+#
+`QF/toQ`:=proc() local f,opt,nrows,vars,sp,ser,n,c,d,eqs,res,j,t;
+  f:=args[1]; nrows:=0;
+  for opt in [args[2..nargs]] do
+    if type(opt,'list') then sp:=opt
+      elif type(opt,`=`) then nrows:=op(2,opt)
+      elif type(opt,'name') then f:=f,opt
+    fi
+  od;
+  f:=QF['toq'](f); d:=SF['stdeg'](f,'q');
+  vars:=[seq(cat('q',j),j=1..d)];
+  if not assigned(sp) then
+    f:=map(x->op(1,x),`SF/homog_cmps`(f,'q'));
+    f:=map(`QF/toQ`,f,'q',args[2..nargs],[]);
+    RETURN(convert(f,`+`))
+  elif nrows>0 then
+    nrows:=min(nrows,degree(f,{op(vars)}));
+    if sp=[] then sp:=QF['DPar'](d,nrows)
+      else sp:=map(proc(x,y) if nops(x)<=y then x fi end,sp,nrows) fi;
+    n:=nops(sp); eqs:=NULL;
+    res:=convert([seq(c[j]*Q[op(sp[j])],j=1..n)],`+`);
+    sp:=map(proc(x) subsop(1=1,x) end,sp);
+    f:=QF['toq'](res-f,'Q[]');
+    for opt in sp do
+      ser:=taylor(convert([seq((1+j*t)/(1-j*t),j=opt)],`*`),t,d+1);
+      eqs:=eqs,subs({seq(cat('q',j)=coeff(ser,t,j),j=1..d)},f);
+    od;
+  else
+    if sp=[] then sp:=QF['DPar'](d,degree(f,{op(vars)})) fi;
+    n:=nops(sp); res:=convert([seq(c[j]*Q[op(sp[j])],j=1..n)],`+`);
+    f:=QF['toddq'](res-f,'Q[]');
+    eqs:=coeffs(f,vars);
+  fi;
+  eqs:=`QF/linsolve`({eqs},{seq(c[j],j=1..n)});
+  subs(map(normal,eqs),res);
+end:
+#
+# zeeQ(lambda)= zee(lambda)/2^nops(lambda) (for lambda in OP),
+#             =             0              (for lambda not in OP).
+# For use with SF[scalar] for computing scalar products.
+#
+`QF/zeeQ`:=proc(mu)
+  if convert(modp(mu,2),`*`)=0 then 0 else SF['zee'](mu,1/2) fi
+end:
+#
+map(proc(x) global QF; assign(QF[x],cat(`QF/`,x)) end proc,
+  ['('DPar')', '('OPar')', '('char2qf')', '('pfaff')', '('qf2char')',
+   '('spin')', '('super')', '('toP')', '('toQ')', '('toddp')',
+   '('toddq')', '('toq')', '('zeeQ')']):
+#
+printf(`QF 0.93v loaded. Run 'withQF()' to use abbreviated names.\n`);

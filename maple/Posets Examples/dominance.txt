@@ -1,0 +1,76 @@
+#
+# dominance - dominance ordering of partitions of an integer
+#
+# Calling sequence:
+#  dominance(n);
+#  dominance(n,'L');
+#
+# Parameters:
+#  n = a nonnegative integer
+#  L = a name
+#
+# IMPORTANT: This requires the SF package.
+#
+# A partition mu of n is a non-increasing list of positive integers with
+# sum n. The dominance order on the set of partitions of n is the partial
+# order in which mu <= nu if
+#
+#    mu[1] + ... + mu[i] <= nu[1] + ... + nu[i]
+#
+# for i=1,2,.... It is known that this ordering is a self-dual lattice.
+#
+# dominance(n) returns the covering relation of a poset isomorphic to the
+# dominance order on partitions of n. The vertex set of the output is of
+# the form {1,...,m}, where m is the number of partitions of n.
+#
+# dominance(n,'L') does the same, and also assigns to L a table of labels
+# for the elements of the poset suitable for use by 'plot_poset'.
+#
+# Examples:
+#  with(SF,Par);  with(posets);
+#
+#  P:=dominance(8,'L');
+#  plot_poset(P,labels=L,stretch=1/3);
+#  lattice(P);                           #verify lattice property
+#  isom(P,dual(P));                      #verify self-duality
+#
+#  P:=dominance(13):
+#  plot_poset(P,title=`The Dominance Order (n=13)`,stretch=1/3);
+#
+# Find the least n for which dominance(n) is not ranked:
+#  for n do P:=dominance(n): if not ranked(P) then break fi od: n;
+#
+# Compute the size of the longest chain in dominance(n) for small n:
+#  [seq(nops(filter(dominance(n))),n=1..12)];
+#
+dominance:=proc(n) local P,nu,pts,sat,i,j,k,m,nu0;
+  pts:=SF['Par'](n); sat:=0; P:=NULL;
+  while sat<nops(pts) do
+    sat:=sat+1; nu:=pts[sat];
+    m:=nops(nu); nu0:=[op(nu),0];
+    for i to m do
+      if nu0[i]=nu0[i+1] then next
+        elif nu0[i]>nu0[i+1]+1 then j:=i+1
+        else for j from i+2 to m while nu0[j-1]=nu0[j] do od fi;
+      if j>min(n,m+1) then next
+        elif j<=m then member(subsop(i=nu[i]-1,j=nu[j]+1,nu),pts,'k')
+        else member([op(subsop(i=nu[i]-1,nu)),1],pts,'k') fi;
+      P:=P,[k,sat]
+    od;  
+  od;
+  if nargs>1 then assign(args[2],
+    table([seq(`dominance/name`(nu),nu=pts)])) fi;
+  if n>1 then posets['covers']({P}) else {},1 fi;
+end;
+#
+# Generate a nice label of type 'string' for the partition mu.
+#
+`dominance/name`:=proc(mu) local i,j,m,s;
+  i:=0; m:=0; s:=NULL;
+  for j in [op(mu),-1] do
+    if j=i then m:=m+1; next fi;
+    if m<3 then s:=cat(s,i$m) else s:=cat(s,i,`^`,m) fi;
+    m:=1; i:=j
+  od; s
+end:
+

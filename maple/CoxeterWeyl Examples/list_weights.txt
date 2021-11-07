@@ -1,0 +1,69 @@
+#
+# list_weights - list dominant weights in various sorted orders
+#
+# Calling sequence:
+#  list_weights(m,R);
+#  list_weights(m,R,mu);
+#  list_weights(m,R,mu,'L');
+#
+# Parameters:
+#  m  = a positive integer (or rational)
+#  R  = a crystallographic root system data structure
+#  mu = (optional) one of the names 'height', 'dim', 'wtsys', or 'numwts'
+#  L  = (optional) an unassigned name
+#
+# In the simplest form, this procedure generates a sorted list of all
+# dominant integral weights of height <= m for the root system R. The
+# height of v is defined to be iprod(v,co_rho(R)).
+#
+# More generally, the procedure may be used to produce sorted lists of
+# dominant weights relative to other measures specified in an optional
+# third argument. The supported measures are:
+#  'height' - the default
+#  'dim'    - the dimension of the corresponding irreducible representation
+#  'wtsys'  - the number of dominant weights in weight_sys(v,R)
+#  'numwts' - the number of distinct weights (not necessarily dominant) in
+#             the corresponding irreducible representation.
+# The expense of generating these lists varies according to the chosen
+# measure: height < dim < wtsys < numwts.
+#
+# If a fourth argument is present, it is assigned a list consisting of the
+# values of the chosen measure for each weight that appears in the output.
+#
+# Examples:
+#  with(weyl):
+#  list_weights(25,F4);
+#  list_weights(25,F4,'height','L'); L;
+#  list_weights(8,D4,'wtsys');
+#  list_weights(100,B3,'numwts','L'); L;
+#
+# List highest weights and dimensions of irreps of Sp(8) with dim < 1000
+#  list_weights(1000,C4,'dim','L'); L;
+#
+list_weights:=proc(m,R) local coS,S,meas,w,v,h,res,n,i,r0,pr;
+  S:=coxeter['base'](R); w:=weyl['weights'](S);
+  pr:=[]; r0:=0; n:=nops(w);
+  coS:=coxeter['co_base'](S);
+  if nargs=2 or args[3]='height' then r0:=weyl['co_rho'](S);
+    meas:=proc(v0) coxeter['iprod'](args[4],v0) end
+  elif args[3]='dim' then pr:=coxeter['pos_roots'](S);
+    meas:=proc(v0) weyl['weyl_dim'](v0,args[2],1,args[3]) end
+  elif args[3]='wtsys' then
+    meas:=proc(v0,J) nops(weyl['weight_sys'](v0,J)) end
+  elif args[3]='numwts' then
+    meas:=proc(v0,J) convert(map(coxeter['orbit_size'],
+      weyl['weight_sys'](v0,J),J),`+`) end
+  else ERROR(`options not recognized`) fi;
+  res:=[0,meas(0,S,pr,r0)]; v:=0; i:=0;
+  while i<=n do
+    for i to n do
+      v:=v+w[i]; h:=meas(v,S,pr,r0);
+      if h<=m then res:=res,[v,h]; break fi;
+      v:=v-coxeter['iprod'](coS[i],v)*w[i]
+    od
+  od;
+  res:=sort([res],(x,y)->evalb(x[2]<=y[2]));
+  if nargs>3 then assign(args[4],map(x->op(2,x),res)) fi;
+  map(x->op(1,x),res)
+end;
+

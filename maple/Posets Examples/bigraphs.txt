@@ -1,0 +1,125 @@
+#
+# bigraphs - list non-isomorphic (simple) bipartite graphs
+#
+# Calling sequence:
+#  bigraphs(m,n,<options>);
+#
+# Parameters:
+#     m,n    = positive integers
+#  <options> = any of the following, in any order
+#     (1) 'nedges=k' (k = a nonnegative integer)
+#     (2) 'maxldeg=d1' (d1 = a nonnegative integer)
+#     (3) 'maxrdeg=d2' (d2 = a nonnegative integer)
+#     (4) a Boolean procedure  
+#
+# A simple bipartite graph (or bigraph) G may be viewed as a subset of the
+# Cartesian product of two disjoint sets L (left) and R (right). If |L|=m
+# and |R|=n, then we say that G has shape (m,n). Two bigraphs G and G'
+# are isomorphic if there are bijections L -> L' and R -> R' that map
+# edges of G to edges of G' and non-edges of G to non-edges of G'.
+#
+# bigraphs(m,n) returns a list of edge sets of all simple bigraphs of
+# shape (m,n), one for each distinct isomorphism class. The edges are
+# represented as ordered pairs [-i,j], where 1 <= i <= m and 1 <= j <= n.
+#
+# If the option 'nedges=k' is specified, then the bigraphs will be limited
+# to those with k edges. If 'maxldeg=d1' is specified, then the bigraphs
+# will be limited to those for which the maximum degree of a left vertex
+# is d1; the option 'maxrdeg=d2' operates analogously. If a Boolean (i.e.,
+# true/false-valued) procedure f is specified, then the the output will
+# be limited to those bigraphs G such that f(G,{-1,...,-m,1,...,n})
+# evaluates to true.
+#
+# The algorithm functions by recursively building lists of all bigraphs
+# of shape (m',n') with k' edges and maximum l- and r-degrees d1' and d2'
+# that may be obtained by deleting a vertex of maximum degree from one of
+# the desired bigraphs. These subgraphs are stored in remember tables, so
+# that subsequent calls to 'bigraphs' will reuse these calculations.
+#
+# Examples:
+#  with(posets);
+#  bigraphs(2,3);
+#  bigraphs(3,3,nedges=5);
+#  bigraphs(3,5,maxrdeg=2,connected);
+#
+# Generate all connected 3-regular bigraphs of shape (6,6):
+#  bigraphs(6,6,nedges=18,maxldeg=3,maxrdeg=3,connected);
+#
+bigraphs:=proc(m,n) local k,d1,D1,d2,D2,i,j,f,X;
+  if not type([m,n],'list'('integer')) or min(m,n)<1 then
+    ERROR(`invalid arguments`) fi;
+  k:=NULL; d1:=NULL; d2:=NULL;
+  X:={$-m..-1,$1..n};
+  f:=proc() true end;
+  for i from 3 to nargs do
+    if type(eval(args[i]),'procedure') then f:=args[i]
+      elif op(1,args[i])='nedges' then k:=op(2,args[i])
+      elif op(1,args[i])='maxldeg' then d1:=op(2,args[i])
+      elif op(1,args[i])='maxrdeg' then d2:=op(2,args[i])
+      else ERROR(`invalid arguments`)
+    fi
+  od;
+  if k=NULL then
+    if d1=NULL then d1:=0; D1:=n else D1:=d1 fi;
+    if d2=NULL then d2:=0; D2:=m else D2:=d2 fi;
+    [seq(seq(seq(op(map(proc(x,y,z) if y(x,z) then x fi end,
+      `bigraphs/lookup`(m,n,k,i,j),f,X)),
+      k=0..min(m*i,n*j)),j=d2..D2),i=d1..D1)]
+  else 
+    if d1=NULL then d1:=iquo(k+m-1,m); D1:=n else D1:=d1 fi;
+    if d2=NULL then d2:=iquo(k+n-1,n); D2:=m else D2:=d2 fi;
+    [seq(seq(op(map(proc(x,y,z) if y(x,z) then x fi end,
+      `bigraphs/lookup`(m,n,k,i,j),f,X)),j=d2..D2),i=d1..D1)]
+  fi
+end;
+
+# build all bigraphs with m+n vertices, k edges,
+# and maximum degrees on left & right = d1,d2
+
+`bigraphs/lookup`:=proc(m,n,k,d1,d2) local i;
+  if k>min(n*d2,m*d1) or d1>n or d2>m or k<max(d1,d2,d1+d2-1) then {}
+  elif k=0 then {{}}
+  elif n=1 then {{seq([-i,1],i=1..k)}}
+  elif m=1 then {{seq([-1,i],i=1..k)}}
+  elif m<n then
+    map(x->map(y->[-y[2],-y[1]],x),`bigraphs/build`(n,m,k,d2,d1))
+  else `bigraphs/build`(m,n,k,d1,d2) fi
+end;
+
+# only bother with remembering these:
+
+`bigraphs/build`:=proc(m,n,k,d1,d2) local G,A,j; option remember;
+  {seq(seq(seq(`bigraphs/can`({op(G),op(A)},m,n),
+    A=`bigraphs/addnew1`(G,m,n,d1,d2)),
+    G=`bigraphs/lookup`(m-1,n,k-d1,j,d2)),j=0..d1),
+  seq(seq(seq(`bigraphs/can`({op(G),op(A)},m,n),
+    A=`bigraphs/addnew2`(G,m,n,d1,d2)),
+    G=`bigraphs/lookup`(m-1,n,k-d1,j,d2-1)),j=0..d1)}
+end;
+
+# select d1 neighbors for vertex -m (not including vertices of deg d2)
+
+`bigraphs/addnew1`:=proc(G,m,n,d1,d2) local A,f,q,e;
+  A:=[$1..n]; f:=convert([seq(q^e[2],e=G)],`+`);
+  A:=map(proc(x,y,z,w) if coeff(y,w,x)<z then x fi end,A,f,d2,q);
+  if nops(A)<d1 then RETURN([]) fi;   #this overcomes a bug in choose
+  combinat['choose']([seq([-m,e],e=A)],d1);
+end;
+
+# select d1 neighbors for vertex -m, including a vertex of deg d2-1
+
+`bigraphs/addnew2`:=proc(G,m,n,d1,d2) local sa,A,f,q,e;
+  A:=[$1..n]; f:=convert([seq(q^e[2],e=G)],`+`);
+  A:=map(proc(x,y,z,w) if coeff(y,w,x)<z then x fi end,A,f,d2-1,q);
+  sa:=combinat['choose']([seq([-m,e],e=1..n)],d1);
+  if nops(A)<d1 then RETURN(sa) fi;   #this overcomes a bug in choose
+  [op({op(sa)} minus {op(combinat['choose']([seq([-m,e],e=A)],d1))})];
+end;
+
+# canonically relabel the vertices of bigraph G
+
+`bigraphs/can`:=proc(G,m,n) local pi,i;
+  pi:=`posets/canorder`(G,[{$-m..-1},{$1..n}]);
+  subs({seq(pi[i]=-i,i=1..m),seq(pi[i+m]=i,i=1..n)},G)
+end;
+

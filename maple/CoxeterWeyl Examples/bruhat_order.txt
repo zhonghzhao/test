@@ -1,0 +1,99 @@
+#
+# bruhat_order - Bruhat ordering of a finite Coxeter group
+#
+# Calling sequence:
+#  bruhat_order(R,<options>);
+#
+# Parameters:
+#  R = a root system data structure
+# The optional arguments are any of the following, in any order:
+#  m = a nonnegative integer
+#  w = a list of integers representing an element of W(R)
+#  Q = an unassigned name
+#
+# The Bruhat ordering of W(R) is the transitive closure of the relations
+# w < t*w for all w in W(R) and all reflections t in W(R) such that
+# length(w) < length(t*w). It is graded by the length function.
+#
+# The bruhat_order function returns the covering relation of an abstract
+# poset isomorphic to the Bruhat order of W(R), in the format used by the
+# posets package.
+#
+# If an optional group element w is specified, the subinterval of the Bruhat
+# order from w to w0 (the longest element) is returned.
+#
+# If an optional integer m is specified, the poset is truncated at rank m.
+#
+# If an unassigned name is specified, then this name will be assigned the
+# set of covering edges of the poset that belong to the (left) weak order;
+# i.e., the relations between pairs that differ by a simple reflection.
+#
+# Examples (assuming that the posets package is installed):
+#  with(coxeter): with(posets,plot_poset):
+#
+#  P:=bruhat_order(A3,'Q');
+#  wk:=table([green=Q]):
+#  plot_poset(P,ecolor=wk);
+#
+#  P:=bruhat_order(H3,5,'Q');
+#  wk:=table([green=Q]):
+#  plot_poset(P,ecolor=wk,stretch=2.0);
+#
+# Use the antiautomorphism w -> w_0*w to extract the subinterval of the
+# Bruhat order of E6 from [] to [1,2,3,4,5,6]:
+#  w:=[op(longest_elt(E6)),1,2,3,4,5,6];
+#  P:=bruhat_order(E6,w);
+#  plot_poset(P,stretch=4.0);
+#
+bruhat_order:=proc(R) local S,coS,m,n,v0,P,Q,new,old,p,q,i,j,c,v,not_mem,EPS;
+  S:=coxeter['base'](R); coS:=coxeter['co_base'](S);
+  if type(S,'list'('polynom'('rational'))) then  # xtal
+    not_mem:=proc(v,L) not member(v,L,args[4]) end
+  else  # non-xtal
+    EPS:=`coxeter/default`['epsilon'];
+    not_mem:=proc(v,L,ep) local s; for s to nops(L) do if
+      convert(map(abs,[coeffs(L[s]-v)]),`+`)<ep then assign(args[4],s);
+      RETURN(false) fi od; true
+    end
+  fi;
+  v0:=coxeter['interior_pt'](S);
+  v:=-v0; m:=coxeter['num_refl'](R);
+  for i from 2 to nargs do
+    if type(args[i],'list') then
+      v:=coxeter['reflect'](seq(S[j],j=args[i]),-v0)
+      elif type(args[i],'integer') then m:=args[i]
+      elif type(args[i],'name') then Q:=NULL; n:=i
+    fi
+  od;
+  P:=NULL; new:=[v]; q:=0;
+  while m>0 do
+    p:=q; q:=q+nops(new);
+    old:=new; new:=[];
+    for i to nops(old) do
+      c:=`bruhat_order/covers`(old[i],v0,S,coS);
+      for v in c do
+        if not_mem(v,new,EPS,'j') then new:=[op(new),v]; j:=nops(new) fi;
+        P:=P,[p+i,q+j]
+      od;
+      if type(n,'integer') then for c to nops(S) do
+        v:=coxeter['iprod'](coS[c],old[i]);
+        if v<0 then v:=old[i]-v*S[c] else next fi;
+        not_mem(v,new,EPS,'j'); Q:=Q,[p+i,q+j]
+      od fi
+    od;
+    m:=m-1; if new=[] then break fi;
+  od;
+  if type(n,'integer') then assign(args[n],{Q}) fi; {P}
+end;
+#
+`bruhat_order/covers`:=proc(u,v0,S,coS) local w,alive,v,i;
+  coxeter['vec2fc'](u,S,'w'); v:=v0;
+  i:=nops(w); alive:=[];
+  while i>0 do
+    alive:=map((x,y)->[x,coxeter['iprod'](y,x)],alive,coS[w[i]]);
+    alive:=[v,op(map(proc(x,y) if x[2]>0 then x[1]-x[2]*y fi end,
+      alive,S[w[i]]))];
+    v:=coxeter['reflect'](S[w[i]],v); i:=i-1
+  od; alive
+end;
+

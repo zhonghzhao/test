@@ -1,0 +1,96 @@
+#
+# traverse - iterate over isomorphism classes of posets on n points
+#
+# Calling sequence:
+#  traverse(n,iv,f,<parameters>);
+#
+# Parameters:
+#  n  = a positive integer (the number of vertices)
+#  iv = an initial value
+#  f  = a procedure
+#
+# The traverse function provides a very space-efficient means of searching
+# through or iterating over each isomorphism class of posets on a given
+# number of vertices. On a fast machine, it is reasonable to use this
+# to search through n-vertex posets for n=10 or more.
+#
+# When called with arguments (n,iv,f), the procedure begins by assigning
+# the value of iv to a local variable 'res'. Then for each isomorphism
+# class of posets P on n points it performs the assignment
+#   res := f(res,P,n)
+# thereby allowing a running total to be accumulated over all posets.
+# When the loop is finished, it returns the final value assigned to 'res'.
+#
+# Any additional parameters a,b,... supplied to 'traverse', are passed on
+# to f. In other words, for each P, res := f(res,P,n,a,b,...) is computed. 
+#
+# The vertex set of each poset P is {1,...,n}, but the ordering will not
+# necessarily be natural -- there may be pairs [i,j] in P with i>j as well
+# as pairs [i,j] with i<j.
+# 
+# If infolevel[traverse] is set to 2, then the running time of the loop is
+# printed before the final result is returned.
+#
+# Debugging note: it is important that f always return a non-NULL value 
+# (in fact, an expression sequence of length 1); otherwise, subsequent
+# invocations of f will get confused when parsing arguments.
+#
+# Examples:
+#  with(posets);
+#
+# Count the number of ranked posets on 6 points:
+#  f:=proc(ct,P,n) if ranked(P,n) then ct+1 else ct fi end;
+#  traverse(6,0,f);
+#
+# For all posets on 8 points with minimum element 0 and maximum element 1,
+# determine the minimum possible value of the mobius function of [0,1],
+# and find all posets achieving the extreme value:
+#  f:=proc(old,P,n) local m,Q;
+#    Q:=&+({},1,P,n,{},1);
+#    m:=mobius(Q,[1,n+2]);
+#    if m<old[1] then [m,Q] elif m=old[1] then [op(old),Q] else old fi;
+#  end;
+#  traverse(6,[1,{}],f);
+#
+# Count the total number of posets on 7 points:
+#   infolevel[traverse]:=2;
+#   traverse(7,0,x->x+1);
+#
+traverse:=proc(n,iv,f) local Rank,Cstack,P,X,Y,down,i,j,st,cc,res;
+  interface(quiet=true);
+  Rank:=0; Cstack:=table();
+  P:={}; X:={$1..n}; res:=iv; st:=time();
+  do
+    res:=f(res,P,n,args[4..nargs]);
+    down:=posets['closure'](P,X,'table');
+    Y:=X minus map(x->x[1],P);
+    cc:={seq(seq(`traverse/accept`([j,i],P,X),j=X minus down[i]),i=Y)};
+    if nops(cc)>0 then Rank:=Rank+1 else
+      do cc:=Cstack[Rank];
+        if nops(cc)=0 then Rank:=Rank-1 else break fi;
+      od;
+      if Rank=0 then break fi
+    fi;
+    Cstack[Rank]:=subsop(1=NULL,cc); P:=cc[1]
+  od;
+  userinfo(2,'traverse',`Running Time:`,time()-st);
+  interface(quiet=false); res
+end;
+
+# Decide whether the poset Q obtained by adding edge e to P identifies
+# e as its "canonical" edge. If so, return the canonical form of Q.
+
+`traverse/accept`:=proc(e,P,X) local Q,i,Y,ct,d,pi;
+  if e[1]=e[2] then RETURN() else Q:={op(P),e} fi;
+  if Q<>posets['covers'](Q) then RETURN() fi;
+  Y:=map(op,Q) minus map(x->x[1],Q);
+  ct:=table([seq(i=0,i=Y)]);
+  for i in Q do if member(i[2],Y) then ct[i[2]]:=ct[i[2]]+1 fi od;
+  d:=min(seq(ct[i],i=Y)); if ct[e[2]]<>d then RETURN() fi;
+  Y:=map(proc(x,y,z) if y[x]=z then x fi end,Y,ct,d);
+  pi:=`posets/canorder`(Q,[Y,X minus Y]);
+  Q:=subs({seq(pi[i]=i,i=1..nops(pi))},Q);
+  i:=min(op(map(proc(x) if x[2]=1 then x[1] fi end,Q)));
+  if [pi[i],pi[1]]=e or posets['isom'](P,Q minus {[i,1]}) then Q fi;
+end;
+

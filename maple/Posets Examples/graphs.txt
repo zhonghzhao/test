@@ -1,0 +1,94 @@
+#
+# graphs - list non-isomorphic (simple, undirected) graphs
+#
+# Calling sequence:
+#  graphs(n,<options>);
+#
+# Parameters:
+#      n     = a positive integer
+#  <options> = any of the following, in any order
+#     (1) 'nedges=k' (k = a nonnegative integer)
+#     (2) 'maxdeg=d' (d = a nonnegative integer)
+#     (3) a Boolean procedure  
+#
+# graphs(n) returns a list of edge sets of all simple, undirected graphs
+# on the vertex set {1,...,n}, one for each distinct isomorphism class.
+# The edges are represented as unordered pairs {i,j}.
+#
+# If the option 'nedges=k' is specified, then the graphs will be limited
+# to those with k edges. Similarly, if 'maxdeg=d' is specified, then the
+# graphs will be limited to those for which the maximum degree of a
+# vertex is d. If a Boolean (i.e., true/false-valued) procedure f is
+# specified, then the the output will be limited to those graphs G such
+# that f(G,{1,...,n}) evaluates to true.
+#
+# The algorithm functions by recursively building lists of all graphs
+# with n' vertices, k' edges and maximum degree d' that may be obtained
+# by deleting a vertex of maximum degree from one of the desired graphs.
+# These subgraphs are stored in remember tables, so that subsequent calls
+# to 'graphs' will reuse these calculations.
+#
+# Examples:
+#  with(posets);
+#  graphs(4);
+#  graphs(5,nedges=6);
+#  graphs(6,maxdeg=2,connected);
+#
+# Generate all 3-regular graphs on 8 vertices:
+#  graphs(8,nedges=12,maxdeg=3);
+#
+graphs:=proc(n) local k,d,f,i,X,K;
+  if not type(n,'integer') or n<1 then ERROR(`invalid arguments`) fi;
+  k:=NULL; d:=NULL; X:={$1..n};
+  f:=proc() true end;
+  for i from 2 to nargs do
+    if type(eval(args[i]),'procedure') then f:=args[i]
+    elif op(1,args[i])='nedges' then k:=op(2,args[i]);
+      if k<0 then RETURN([]) fi;
+    elif op(1,args[i])='maxdeg' then d:=op(2,args[i]);
+      if d<0 or d>=n then RETURN([]) fi;
+    else ERROR(`invalid arguments`) fi
+  od;
+  if d=NULL then
+    if k=NULL then k:=0; K:=n*(n-1)/2 else K:=k fi;
+    [seq(seq(op(map(proc(x,y,z) if y(x,z) then x fi end,
+      `graphs/build`(n,i,d),f,X)),d=iquo(2*i+n-1,n)..min(n-1,i)),i=k..K)]
+  else
+    if k=NULL then k:=d; K:=iquo(n*d,2) else K:=k fi;
+    [seq(op(map(proc(x,y,z) if y(x,z) then x fi end,
+      `graphs/build`(n,i,d),f,X)),i=k..K)]
+  fi
+end;
+
+# build all graphs on n verts, k edges, max degree=d
+
+`graphs/build`:=proc(n,k,d) local G,A,j; option remember;
+  {seq(seq(seq(`graphs/can`({op(G),op(A)},n),
+    A=`graphs/addnew`(G,n,d,j)),
+    G=procname(n-1,k-d,j)),
+    j=iquo(2*(k-d)+n-2,n-1)..min(n-2,k-d,d))}
+end;
+`graphs/build`(1,0,0):={{}}:
+
+# Find all ways to add a vertex of degree d to a graph G with maximum
+# degree j, j<=d, so that the new graph has max degree d. The vertex set
+# of G must be {1,...,n-1} and the output will be a list of choices for
+# the sets of new edges.
+
+`graphs/addnew`:=proc(G,n,d,j) local A,f,q,e;
+  A:=[$1..n-1];
+  if j=d then
+    f:=convert([seq(q^e[1]+q^e[2],e=G)],`+`);
+    A:=map(proc(x,y,z,w) if coeff(y,w,x)<z then x fi end,A,f,d,q);
+  fi;
+  if nops(A)<d then RETURN([]) fi;   #this overcomes a bug in choose
+  combinat['choose']([seq({e,n},e=A)],d);
+end;
+
+# canonically relabel the vertices of G
+
+`graphs/can`:=proc(G,n) local pi,i;
+  pi:=`posets/canorder`(map(x->([x[1],x[2]],[x[2],x[1]]),G),[{$1..n}]);
+  subs({seq(pi[i]=i,i=1..n)},G)
+end;
+

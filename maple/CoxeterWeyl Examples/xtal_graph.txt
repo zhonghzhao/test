@@ -1,0 +1,106 @@
+#
+# xtal_graph - generate the crystal graph of a representation
+# plot_xtal  - display a crystal graph in fruity colors
+#
+# Calling sequence:
+#  xtal_graph(u,R);
+#  xtal_graph(u,R,'T');
+#  plot_xtal(P,t,<options>);            # requires the posets package
+#
+# Parameters:
+#  R = a crystallographic root system data structure
+#  u = a dominant integral weight (linear combination of e1,e2,...)
+#  T = (optional) a name
+#  P = a crystal graph (the output from xtal_graph)
+#  t = a table of color assignments
+#
+# The crystal graph of a representation of LieAlg(R) is an edge-colored
+# directed graph. The colors are numbers ranging from 1 to n=rank(R) that
+# correspond to simple roots. The number of vertices is the dimension of
+# the representation, and the edges describe the action of the Chevalley
+# generators E_i and F_i in the crystal limit q -> 0 of the corresponding
+# quantum group action.
+#
+# Given a dominant integral weight u, xtal_graph(u,R) returns the edge
+# set of the corresponding crystal graph; i.e., a set of ordered pairs
+# of integers from 1 to m = weyl_dim(u,R). The presence of an ordered
+# pair [a,b] means that there is a colored edge a <- b. The highest weight
+# vector is vertex 1. The algorithm constructs the graph in a product of
+# minuscule and quasi-minuscule crystal graphs.
+#
+# In the form xtal_graph(u,R,'L'), the function will also assign to L
+# a table with indices 1,2,...,n such that L[i] is the set of edges of
+# the crystal graph with color i.
+#
+# If P is the output from xtal_graph(u,R,'L'), then the function call
+# plot_xtal(P,L) will plot the crystal graph using Maple 2D graphics.
+# This requires the posets package to be installed (and loaded).
+#
+# Any arguments to plot_xtal beyond the second will be passed as options
+# to the function posets[plot_poset].
+#
+# Reference: M. Kashiwara, On crystal bases, in "Representations of Groups
+#  (Banff, AB, 1994)", CMS Conf. Proc. 16 (1995), 155-197.
+#
+# Example:
+#  with(weyl):
+#  with(posets,plot_poset);             # requires the posets package
+#  w:=weights(B2);
+#  P:=xtal_graph(3*w[1],B2,'L');
+#  plot_xtal(P,L,labels);               # requires the posets package
+#
+#  P:=xtal_graph(rho(A3),A3,'L');
+#  plot_xtal(P,L);
+#
+#  w:=weights(D4);
+#  P:=xtal_graph(w[1]+w[4],D4,'L');
+#  plot_xtal(P,L);
+#
+xtal_graph:=proc(u,R) local S,coS,n,X,sat,P,i,j,x,y;
+  S:=coxeter['base'](R); coS:=coxeter['co_base'](S);
+  n:=nops(S); P:=table([seq(i=NULL,i=1..n)]);
+  X:=[`weyl/findrep`(u,S)]; sat:=0;
+  while sat<nops(X) do
+    sat:=sat+1; x:=X[sat];
+    for i to n do
+      if `xtal_graph/rise`(x,i,S,coS,'y')=0 then next fi;
+      if not member(y,X,'j') then X:=[op(X),y]; j:=nops(X) fi;
+      P[i]:=P[i],[j,sat]
+    od
+  od;
+  if nargs>2 then assign(args[3],table([seq(i={P[i]},i=1..n)])) fi;
+  {seq(P[i],i=1..n)}
+end;
+#
+# For displaying the crystal graph in fruity colors.
+# Edit the definition of 'colorseq' to your preference.
+#
+plot_xtal:=proc(P,L) local C,i,colorseq;
+  colorseq:=[red,green,blue,magenta,brown,yellow,coral,khaki];
+  if nops([indices(L)])>nops(colorseq) then
+    ERROR(`rank too large to display all colors`) fi;
+  C:=table([seq(colorseq[i]=L[i],i=1..nops([entries(L)]))]);
+  posets['plot_poset'](P,ecolor=C,args[3..nargs]);
+end;
+#
+# Return the rise of x in the direction of the i-th simple root.
+# If the rise is positive, assign F_i(x) to the fifth argument.
+#
+`xtal_graph/rise`:=proc(x,i,S,coS) local m,m0,d,sa,j,k,y;
+  m:=0; sa:=0;
+  for j to nops(x) do
+    if x[j]=i then d:=-1  # use i for object 0_i
+      elif type(x[j],'integer') then d:=0
+      else d:=coxeter['iprod'](coS[i],x[j]) fi;
+    m0:=sa+min(d,0);
+    if m0<m then m:=m0; k:=j
+      elif m0=m then k:=j fi;
+    if x[j]=i then d:=0 fi;
+    sa:=sa+d;
+  od;
+  if x[k]=i then y:=-S[i]
+    elif x[k]=S[i] then y:=i
+    else y:=x[k]-S[i] fi;
+  if sa>m then assign(args[5],subsop(k=y,x)) fi; sa-m
+end;
+

@@ -1,0 +1,70 @@
+#
+# par_lattice - lattice of partitions of a set
+#
+# Calling sequence:
+#  par_lattice(n);
+#  par_lattice(n,'T');
+#
+# Parameters:
+#  n = a positive integer
+#  T = a name
+#
+# A partition of a set X is a set {A_1,A_2,...,A_k}, where the A_i's are
+# nonempty, pairwise disjoint sets whose union is X. The set of partitions
+# of X is partially ordered by refinement; i.e., {A_1,A_2,...,A_k} <=
+# {B_1,...,B_l} if every A_i is a subset of some B_j. This partial order
+# forms a geometric lattice; hence it is atomic and upper semi-modular.
+#
+# par_lattice(n) returns the covering relation of a poset isomorphic to
+# the lattice of partitions of an n-element set. The vertex set of the
+# output is {1,...,m}, where m is the number of partitions of an n-set.
+#
+# par_lattice(n,'T') does the same, and also assigns to T a table of labels
+# for the elements of the lattice suitable for use by 'plot_poset'.
+#
+# Examples:
+#  with(posets);
+#  L:=par_lattice(4,'T');
+#  plot_poset(L,labels=T,stretch=2);
+#
+#  L:=par_lattice(5);
+#  plot_poset(L,proportional);
+#
+#  L:=par_lattice(6):
+#  factor(char_poly(L,t));           #factor the characteristic polynomial
+#  modular(L,'upper');               #verify upper semi-modularity
+#  modular(L);                       #not modular
+#  atomic(L);                        #verify atomic
+#
+par_lattice:=proc(n) local i,j,x,y,bot,top,pi,sigma,lenb,lent,P,t;
+  top:=[{seq({i},i=1..n)}];
+  if nargs>1 then t:=table([`par_lattice/name`(top[1])]) fi;
+  lenb:=0; lent:=1; P:=NULL;
+  while nops(top[1])>1 do
+    bot:=top; top:=[];
+    for x to nops(bot) do
+      pi:=bot[x];
+      for i from 2 to nops(pi) do for j to i-1 do
+        sigma:=subsop(j={op(pi[j]),op(pi[i])},i=NULL,pi);
+        if not member(sigma,top,'y') then
+          top:=[op(top),sigma]; y:=nops(top);
+          if nargs>1 then t[lent+y]:=`par_lattice/name`(sigma) fi
+        fi;
+        P:=P,[lenb+x,lent+y]
+      od od
+    od;
+    lenb:=lent; lent:=lent+nops(top)
+  od;
+  if nargs>1 then assign(args[2],op(t)) fi;
+  if n>1 then {P} else {},1 fi
+end;
+#
+# Generate a nice label of type 'string' for the partition pi.
+#
+`par_lattice/name`:=proc(pi) local mu;
+  mu:=[op(map(x->sort([op(x)]),pi))];
+  mu:=sort(mu,(u,v)->evalb(u[1]<v[1]));
+  mu:=cat(op(map(x->cat(`/`,op(x)),mu)));
+  substring(mu,2..length(mu))
+end:
+

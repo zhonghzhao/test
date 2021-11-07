@@ -1,0 +1,45 @@
+#
+# poincare - Poincare series (length g.f.) for arbitrary Coxeter groups
+#
+# Calling sequence:
+#  poincare(m);
+#  poincare(m,q);
+#
+# Parameters:
+#  m = a Coxeter or Cartan matrix for a possibly infinite Coxeter group
+#  q = (optional) a variable or expression
+#
+# This procedure computes the Poincare series of an arbitrary Coxeter
+# group W; i.e., the sum of q^length(w) where w ranges over W. If W is
+# infinite, the result is expressed as a rational function of q.
+#
+# If the second argument is omitted, q is the default.
+# 
+# Examples:
+#  with(coxeter):
+#  m:=array([[1,infinity],[infinity,1]]);   # the infinite dihedral group
+#  poincare(m,z);
+#
+#  S:=[op(base(B3)),-highest_root(B3)];
+#  m:=cartan_matrix(S);                     # affine B3
+#  factor(poincare(m));
+#
+poincare:=proc() local M,R,f,J,z,i,N;
+  M:=coxeter['cox_matrix'](args[1]);
+  f:=1; J:=[$1..coxeter['rank'](M)];
+  while nops(J)>0 do
+    N:=linalg['submatrix'](M,J,J);
+    if not member(['infinity'],{entries(N)}) then
+      R:=traperror(coxeter['name_of'](N));
+      if R<>lasterror then
+        N:=[seq(1-z^i,i=coxeter['degrees'](R))];
+        f:=f+(z-1)^nops(J)/convert(N,`*`);
+        elif R<>`not a finite Coxeter group` then ERROR(R)
+      fi
+    fi;
+    J:=subsop(1=(seq(i,i=1..J[1]-1)),J)
+  od;
+  f:=normal(1/subs(z=1/z,normal(f)));
+  if nargs>1 then subs(z=args[2],f) else subs(z=q,f) fi;
+end;
+

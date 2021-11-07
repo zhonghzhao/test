@@ -1,0 +1,74 @@
+#
+# young_diag - Young diagram of a (skew) partition
+#
+# Calling sequence:
+#  young_diag(mu);
+#  young_diag(mu,nu);
+#  strict_edges(Y);
+#
+# Parameters:
+#  mu,nu = partitions
+#    Y   = the covering relation of a (possibly skew) Young diagram
+#
+# A number partition mu is a non-increasing list of positive integers.
+# The Young diagram Y(mu) associated to mu is the set of ordered pairs
+# (i,j) such that 1 <= i <= nops(mu) and 1 <= j <= mu[i]. It is
+# partially ordered so that (i,j) <= (i',j') if i <= i' and j <= j'.
+#
+# The linear extensions of Y(mu) are in 1-1 correspondence with the
+# standard Young tableaux of shape mu.
+#
+# If nu is a second partition, then the skew Young diagram Y(mu,nu) is
+# the subposet of Y(mu) obtained by deleting the vertices of Y(nu).
+#
+# young_diag(mu) returns the covering relation of a poset isomorphic
+# to Y(mu), using a vertex set of the form {1,...,n} for some n.
+# The vertices of the output are numbered so that if x and y correspond
+# to the vertices (i,j) and (i+1,j) of Y(mu) (resp., (i,j) and (i,j+1)),
+# then x > y (resp., x < y). 
+#
+# young_diag(mu,nu) returns the covering relation of a poset isomorphic
+# to Y(mu,nu), using a vertex set of the form {1,...,n} for some n.
+# The vertices of the output are numbered as in the previous case.
+#
+# If Y=young_diag(mu) or Y=young_diag(mu,nu) for some partitions mu and nu,
+# then strict_edges(Y) returns the subset of Y consisting of pairs of
+# adjacent vertices that occur in the same column of Y (i.e., vertices of
+# the form (i,j) and (i,j+1)), for use with 'omega', 'W', and 'plot_poset'.
+#
+# Examples:
+#  with(posets);
+#
+# Plot the Young diagram of [5,5,4,3,2,2], with columns in green:
+#   Y:=young_diag([5,5,4,3,2,2]);
+#   S:=strict_edges(Y);
+#   C:=table([green=S]);
+#   plot_poset(Y,labels,ecolor=C);
+#
+# Count the semi-standard tableaux of shape [4,3,1,1] with entries <= m;
+# i.e., the dimension of an irreducible representation of GL(m):
+#   Y:=young_diag([4,3,1,1]);
+#   S:=strict_edges(Y);
+#   factor(omega(Y,m,S));
+#
+# Compute the generating function for standard Young tableaux of shape
+# [4,3,1,1] by major index (marked by q) and descents (marked by t):
+#   f:=expand(W(Y,q,t,S)/q^9/t);
+#   factor(subs(t=1,f));
+#
+# Count the (skew) standard tableaux of shape [6,5,4,3,2,1],[2,1]:
+#   W(young_diag([6,5,4,3,2,1],[2,1]),1,1);
+#
+strict_edges:=proc(P) map(proc(e) if e[1]>e[2] then e fi end,P) end;
+#
+young_diag:=proc(mu) local nu,i,j,d,P;
+  if nargs>1 then nu:=args[2] else nu:=[] fi;
+  P:=NULL; nu:=[op(nu),0$nops(mu)];
+  d:=[seq(seq([-i,j],j=nu[-i]+1..mu[-i]),i=-nops(mu)..-1)];
+  for i to nops(d) do
+    if member([d[i][1]+1,d[i][2]],d,'j') then P:=P,[i,j] fi;
+    if member([d[i][1],d[i][2]+1],d,'j') then P:=P,[i,j] fi;
+  od;
+  if nops(d)>1 then {P} elif nops(d)=1 then {},1 fi
+end;
+
