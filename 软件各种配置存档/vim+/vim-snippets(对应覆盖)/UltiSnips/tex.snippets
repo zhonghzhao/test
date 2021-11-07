@@ -1,0 +1,1148 @@
+global !p
+texMathZones = ['texMathZone'+x for x in ['A', 'AS', 'B', 'BS', 'C', 'CS', 'D', 'DS', 'E', 'ES', 'F', 'FS', 'G', 'GS', 'H', 'HS', 'I', 'IS', 'J', 'JS', 'K', 'KS', 'L', 'LS', 'DS', 'V', 'W', 'X', 'Y', 'Z']]
+
+texIgnoreMathZones = ['texMathText']
+
+texMathZoneIds = vim.eval('map('+str(texMathZones)+", 'hlID(v:val)')")
+texIgnoreMathZoneIds = vim.eval('map('+str(texIgnoreMathZones)+", 'hlID(v:val)')")
+
+ignore = texIgnoreMathZoneIds[0]
+
+HatSequence = r"\overline \bar \hat \tilde \widetilde \widehat".split()
+
+LeftArrows = r"\leftarrow|\longleftarrow|\Leftarrow|\Longleftarrow".split("|")
+
+RightArrows = r"\rightarrow|\longrightarrow|\Rightarrow|\Longrightarrow".split("|")
+
+LeftrightArrows = ["\\" + x for x in "leftrightarrow|longleftrightarrow|Leftrightarrow|Longleftrightarrow|iff".split("|")]
+
+import re
+
+def math():
+	synstackids = vim.eval("synstack(line('.'), col('.') - (col('.')>=2 ? 1 : 0))")
+	try:
+		first = next(i for i in reversed(synstackids) if i in texIgnoreMathZoneIds or i in texMathZoneIds)
+		return first != ignore
+	except StopIteration:
+		return False
+
+def environment(default_envname = None, lastemptyline = False):
+	currentlinenumber = int(vim.eval("line('.')"))
+	if lastemptyline and vim.eval("getline(%d)" % currentlinenumber).strip() != "":
+		return ""
+	for index in range(currentlinenumber - 1, 0, -1):
+		if vim.eval("getline(%d)" % index).endswith("\\\\"):
+			continue
+		else:
+			ob = re.fullmatch(r".*\\begin{(\w+\*?)}({\w+})?(\[\w+\])?", vim.eval("getline(%d)" % index))
+			if ob:
+				env_name = ob.group(1)
+				break
+			else:
+				return ""
+	else:
+		return ""
+	for index in range(currentlinenumber + 1, (int(vim.eval("line('$')")) if not lastemptyline else (currentlinenumber + 1)) + 1):
+		if vim.eval("getline(%d)" % index).endswith("\\\\"):
+			continue
+		ob = re.fullmatch(r".*\\end{(\w+\*?)}", vim.eval("getline(%d)" % index))
+		if ob:
+			if env_name == ob.group(1):
+				if default_envname is None:
+					return env_name
+				else:
+					return env_name == default_envname
+			else:
+				return ""
+		else:
+			return ""
+	else:
+		return ""
+
+def extract_operator(line):
+	line = line.strip()
+	if line[0] in ["=", "<", ">"]:
+		return line[0]
+	elif line[0] != "\\":
+		return ""
+	else:
+		if not line[1].isalpha():
+			return ""
+		rv = "\\" + re.fullmatch("([a-zA-Z]+)([^a-zA-Z].*)", line[1:]).group(1)
+		remain = re.fullmatch("([a-zA-Z]+)([^a-zA-Z].*)", line[1:]).group(2)
+		if remain and remain[0] == "{":
+			index = 0
+			depth = 0
+			while index < len(remain):
+				if remain[index] == "{":
+					depth += 1
+					index += 1
+					continue
+				elif remain[index] == "}":
+					depth -= 1
+					index += 1
+					if depth == 0:
+						rv += remain[:index]
+						break
+					continue
+				elif remain[index] == "\\":
+					index += 2
+					continue
+				else:
+					index += 1
+					continue
+		return rv
+
+def findfirstoperator(line):
+    index = 0
+    depth = 0
+    while index < len(line):
+        if line[index] == '\s':
+            index += 1
+            continue
+        elif line[index] in ['{', '(']:
+            depth += 1
+            index += 1
+            continue
+        elif line[index] in ['}', ')']:
+            depth -= 1
+            index += 1
+            continue
+        elif depth <= 0 and line[index] == '=':
+            return index
+        elif depth <= 0 and all(line[index:].startswith(x) for x in ["\\le", "\\ge", ">", "<", "\\succ", "\\prec", "\\sim", "\\ne", "\\not"]):
+            return index
+        else:
+            index += 1
+            continue
+    else:
+        return len(line) - len(line.lstrip())
+
+def findmatched_parentheses(line, lindex):
+	depth = 0
+	matched = {"(":")", ")":"(", "[":"]", "]":"[", "{":"}", "}":"{"}
+	c = line[lindex]
+	d = matched[c]
+	if line[lindex] in ["(", "[", "{"]:
+		for index in range(lindex, len(line)):
+			if line[index] == c:
+				depth += 1
+			elif line[index] == d:
+				depth -= 1
+			if depth == 0:
+				return index
+	elif line[lindex] in [")", "]", "}"]:
+		for index in range(lindex, -1, -1):
+			if line[index] == c:
+				depth += 1
+			elif line[index] == d:
+				depth -= 1
+			if depth == 0:
+				return index
+	return -1
+
+def add_placeholder(snip):
+	info = snip.buffer[snip.line]
+	snip.buffer[snip.line] = ''
+	# print(info)
+	snip.expand_anon(info)
+
+def add_package(packagename):
+	if packagename == "pgfplots" and vim.eval("search('\\\\usepackage{pgfplots}', 'n')") == '0':
+		try:
+			first = int(vim.eval("search('\\\\usepackage', 'n')"))
+			if first == 0:
+				first = int(vim.eval("search('\\documentclass', 'n')"))
+			else:
+				first -= 1
+		except:
+			first = 0
+		snip.buffer[first:first] = ['\\pgfplotsset{compat=1.16}']
+		snip.buffer[first:first] = ['\\usepackage{pgfplots}']
+
+def generate_matrix(prefix, snip):
+	info = snip.buffer[snip.line]
+	spacelen = len(info) - len(info.lstrip())
+	linfo = info[:snip.snippet_start[1]]
+	rinfo = info[snip.snippet_end[1]:]
+	info = info[snip.snippet_start[1]:snip.snippet_end[1]]
+	# print([linfo, rinfo, info])
+	if len(info) > 1 and info[1].isnumeric():
+		real_shape = info[:2]
+		virtual_shape = info[2:]
+	else:
+		real_shape = info[0]
+		virtual_shape = info[1:]
+	if len(real_shape) == 1:
+		row_amount = int(real_shape)
+		column_amount = int(real_shape)
+	else:
+		row_amount = int(real_shape[0])
+		column_amount = int(real_shape[1])
+	if len(virtual_shape) == 0:
+		virtual_row_amount = "0"
+		virtual_column_amount = "0"
+	elif len(virtual_shape) == 1:
+		virtual_row_amount = virtual_shape[0]
+		virtual_column_amount = virtual_shape[0]
+	else:
+		virtual_row_amount = virtual_shape[0]
+		virtual_column_amount = virtual_shape[1]
+	snip.buffer[snip.line] = ''
+	displayed = re.sub(r"\\", r"\\\\", linfo) + "\\begin{%cmatrix}\n" % prefix
+	def generate_code(i, j, row, column, virtual_row, virtual_column):
+		if i == 1 and j == 1:
+			return ""
+		else:
+			code = """`!p
+import sys
+sys.path.append(vim.eval("g:ZYTSNIP_PATH") + "UltiSnips")
+from pythonutil import generate_matrix_element
+snip.rv = generate_matrix_element(%d, %d, %d, %d, '%c', '%c', [%s], [%s])
+`""" % (i, j, row, column, virtual_row, virtual_column, "''," + ",".join("t[%d]" % x for x in range(1, j+1)), "''," + ",".join("t[%d]" % (1 + column * (x-1)) for x in range(1, i+1)))
+		return code
+	if row_amount > 0 and column_amount > 0:
+		displayed += " " * (4 + len(linfo)) + "$1\t" + ("& " if column_amount > 1 else "\\" * 4)
+		index = 2
+		for i in range(2, column_amount + 1):
+			displayed += "${" + "{}".format(index) + ":" + generate_code(1, i, row_amount, column_amount, virtual_row_amount, virtual_column_amount) + "}\t" + ("& " if i < column_amount else "\\" * 4)
+			index += 1
+		displayed += "\n"
+		for j in range(2, row_amount + 1):
+			displayed += " " * (4 + len(linfo))
+			for i in range(1, column_amount + 1):
+				displayed += "${" + "{}".format(index) + ":" + generate_code(j, i, row_amount, column_amount, virtual_row_amount, virtual_column_amount) + "}\t" + ("& " if i < column_amount else "\\" * 4)
+				index += 1
+			displayed += "\n"
+	displayed += " " * len(linfo) + "\\end{%cmatrix}$0" % prefix + (" " + re.sub(r"\\", r"\\\\", rinfo) if rinfo else "")
+	snip.expand_anon(displayed)
+endglobal
+
+snippet template "Basic template" b
+%!TeX program = xelatex
+
+\documentclass{article}
+
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.16}
+\usepackage{amsmath}
+\usepackage{mathrsfs} 
+\usepackage{amsfonts}
+\usepackage{graphicx}
+\usepackage{geometry}
+\usepackage{listings}
+
+\usepackage{color}
+
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+
+\lstset{frame=tb,
+  language=Python,
+  aboveskip=3mm,
+  belowskip=3mm,
+  showstringspaces=false,
+  columns=flexible,
+  basicstyle={\small\ttfamily},
+  numbers=none,
+  numberstyle=\tiny\color{gray},
+  keywordstyle=\color{blue},
+  commentstyle=\color{dkgreen},
+  stringstyle=\color{mauve},
+  breaklines=true,
+  breakatwhitespace=true,
+  tabsize=3
+}
+
+\geometry{left = 3cm, right = 3cm, top = 3cm, bottom = 3cm}
+
+\begin{document}
+	$0
+\end{document}
+endsnippet
+
+# \begin{}...\end{}
+snippet beg "begin{} / end{}" b
+\\begin{$1}
+	$0
+\\end{$1}
+endsnippet
+
+priority 100
+snippet ... "cdots" iA
+\cdots 
+endsnippet
+
+
+context "math()"
+snippet iff "iff" wA
+\iff
+endsnippet
+
+snippet mk "Math" wA
+$${1}$`!p
+if t[2] and t[2][0] not in [',', '.', '?', '-', ' ']:
+	snip.rv = ' '
+else:
+	snip.rv = ''
+`$2
+endsnippet
+
+snippet dm "Math" wA
+\[
+	${1:${VISUAL}}
+\]
+endsnippet
+
+snippet ali "Align" b
+\begin{align*}
+${1:`!p
+selectedcode = [x for x in snip.v.text.split("\n") if x]
+for (i, x) in enumerate(selectedcode):
+    index = findfirstoperator(x)
+    snip.rv += ("" if i == 0 else "    ") + x[:index] + "&" + x[index:] + "\\\\" + ("" if i == len(selectedcode) - 1 else "\n")
+`}
+\end{align*}
+endsnippet
+
+snippet bali "Align with {" b
+\[
+\left\{
+\begin{align*}
+${1:`!p
+selectedcode = [x for x in snip.v.text.split("\n") if x]
+for (i, x) in enumerate(selectedcode):
+    index = findfirstoperator(x)
+    snip.rv += ("" if i == 0 else "    ") + x[:index] + "&" + x[index:] + "\\\\" + ("" if i == len(selectedcode) - 1 else "\n")
+`}\end{align*}
+\]
+endsnippet
+
+
+
+context "math()"
+snippet // "Fraction" iA
+\\tfrac{$1}{$2}$0
+endsnippet
+
+snippet / "Fraction" i
+\\dfrac{$1}{$2}$0
+endsnippet
+
+priority 100
+context "math()"
+snippet '((\d+)|(\d*)(\\)?([A-Za-z]+)((\^|_)(\{\d+\}|\d))*)/' "symbol frac" wrA
+\\frac{`!p snip.rv = match.group(1)`}{$1}$0
+endsnippet
+
+priority 1000
+snippet '^(.*\))(\^\d|\^{[^{}]+})/' "()^2 frac" wrA
+`!p
+stripped = match.group(1)
+depth = 0
+i = len(stripped) - 1
+while True:
+	if stripped[i] == ')': depth += 1
+	if stripped[i] == '(': depth -= 1
+	if depth == 0: break;
+	i-=1
+snip.rv = stripped[0:i] + "\\frac{" + stripped[i:] + match.group(2) + "}"
+`{$1}$0
+endsnippet
+
+priority 1000
+context "math()"
+snippet '^.*\)/' "() frac" wrA
+`!p
+stripped = match.string[:-1]
+depth = 0
+i = len(stripped) - 1
+while True:
+	if stripped[i] == ')': depth += 1
+	if stripped[i] == '(': depth -= 1
+	if depth == 0: break;
+	i-=1
+snip.rv = stripped[0:i] + "\\frac{" + stripped[i+1:-1] + "}"
+`{$1}$0
+endsnippet
+
+context "math()"
+snippet '([A-Za-z])(\d)' "auto subscript" wrA
+`!p snip.rv = match.group(1)`_`!p snip.rv = match.group(2)`
+endsnippet
+
+context "math()"
+snippet '([A-Za-z])_(\d\d)' "auto subscript2" wrA
+`!p snip.rv = match.group(1)`_{`!p snip.rv = match.group(2)`}
+endsnippet
+
+
+snippet sympy "sympyblock " w
+sympy $1 sympy$0
+endsnippet
+
+priority 10000
+snippet 'sympy(.*)sympy' "sympy" wr
+`!p
+from sympy import *
+x, y, z, t = symbols('x y z t')
+k, m, n = symbols('k m n', integer=True)
+f, g, h = symbols('f g h', cls=Function)
+init_printing()
+snip.rv = eval('latex(' + match.group(1).replace('\\', '').replace('^', '**').replace('{', '(').replace('}', ')') + ')')
+`
+endsnippet
+
+priority 1000
+snippet math "mathematicablock" w
+math $1 math$0
+endsnippet
+
+priority 10000
+snippet 'math(.*)math' "math" wr
+`!p
+import subprocess
+code = match.group(1)
+code = 'ToString[' + code + ', TeXForm]'
+snip.rv = subprocess.check_output(['wolframscript', '-code', code])
+`
+endsnippet
+
+
+
+
+
+
+
+context "math()"
+snippet floor "floor" iA
+\left\lfloor $1 \right\rfloor$0
+endsnippet
+
+snippet pmat "pmat" w
+context "math()"
+\begin{pmatrix} $1 \end{pmatrix} $0
+endsnippet
+
+post_jump "generate_matrix('p', snip)"
+context "math()"
+snippet "pmat\(([1-9]{1,2}[a-zA-Z]{0,2})\)" "pmat" irw
+`!p
+if not snip.c:
+	snip.rv = match.group(1)
+`
+endsnippet
+
+snippet bmat "bmat" w
+context "math()"
+\begin{bmatrix} $1 \end{bmatrix} $0
+endsnippet
+
+post_jump "generate_matrix('b', snip)"
+context "math()"
+snippet "bmat\(([1-9]{1,2}[a-zA-Z]{0,2})\)" "bmat" irw
+`!p
+if not snip.c:
+	snip.rv = match.group(1)
+`
+endsnippet
+
+context "math()"
+snippet "(?<=\()@" "copy in parathesis" wr
+$1`!p
+content = vim_left_all(100)
+eandidate = sum([re.findall(r"(?<=\()[^()]+(?=\))", x)[::-1] for x in content], [])
+candidate = list(dict.fromkeys(candidate))
+candidate = [x[len(t[1]):] for x in candidate if x.startswith(t[1]) and len(t[1]) < len(x)]
+if len(candidate) == 1:
+	snip.rv = candidate[0]
+elif candidate:
+	snip.rv = candidate[0]
+else:
+	snip.rv = ""
+`$0
+endsnippet
+
+# context "math()"
+# snippet ( "( )" iA
+# ($1) $0
+# endsnippet
+
+snippet lrp "left( right)" iA
+\left( ${1:${VISUAL}} \right) $0
+endsnippet
+
+# snippet lr( "left( right)" i
+# \left( ${1:${VISUAL}} \right) $0
+# endsnippet
+
+snippet lr| "left| right|" i
+\left| ${1:${VISUAL}} \right| $0
+endsnippet
+
+snippet lr{ "left\{ right\}" i
+\left\\{ ${1:${VISUAL}} \right\\} $0
+endsnippet
+
+snippet lrb "left\{ right\}" i
+\left\\{ ${1:${VISUAL}} \right\\} $0
+endsnippet
+
+snippet lrB "left[ right]" iA
+\left[ ${1:${VISUAL}} \right] $0
+endsnippet
+
+snippet lra "leftangle rightangle" iA
+\left<${1:${VISUAL}} \right>$0
+endsnippet
+
+context "math()"
+snippet conj "conjugate" iA
+\overline{$1}$0
+endsnippet
+
+snippet "(?<!\\)suma" "sum of array" wrA
+\sum_{${1:i}=1}^{${2:n}} $0
+endsnippet
+
+snippet taylor "taylor" w
+\sum_{${1:k}=${2:0}}^{${3:\infty}} ${4:c_$1} (x-a)^$1 $0
+endsnippet
+
+
+
+snippet prod "product" w
+\prod_{${1:n=${2:1}}}^{${3:\infty}} ${4:${VISUAL}} $0
+endsnippet
+
+snippet part "d/dx" w
+\frac{\partial ${1:V}}{\partial ${2:x}} $0
+endsnippet
+
+snippet diff "d/dx" w
+\frac{\mathrm{d}${1:y}}{\mathrm{d}${2:x}} $0
+endsnippet
+
+context "math()"
+snippet sq "\sqrt{}" iA
+\sqrt{${1:${VISUAL}}} $0
+endsnippet
+
+context "math()"
+snippet sr "^2" iA
+^2
+endsnippet
+
+context "math()"
+snippet "([\w})\]])tp" "transpose" irA
+`!p snip.rv=match.group(1)`^\top
+endsnippet
+
+context "math()"
+snippet cb "^3" iA
+^3
+endsnippet
+
+context "math()"
+snippet td "to the ... power" iA
+^{$1}$0
+endsnippet
+
+context "math()"
+snippet rd "to the ... power" iA
+^{($1)}$0
+endsnippet
+
+context "math() and {'works': 0}"
+snippet "^(.*)(\\\w+|(?<![\w\\])\w+)__" "subscript" wrA
+`!p
+if not snip.c:
+	snip.rv = match.group(1) + match.group(2)
+`_{$1`!p
+# print("line [670] match.group(1): ###%s###" % match.group(1))
+# print("line [671] match.group(2): ###%s###" % match.group(2))
+# print("line [672] int(vim.eval(\"col('.')\")) - len(match.group(1)) - len(match.group(2)) - len(t[1]): ###%s###" % (int(vim.eval("col('.')")) - len(match.group(1)) - len(match.group(2)) - len(t[1])))
+# print("^^^^^^^^^^^^^^^^^^^^^^^^^^")
+# print("line [674] snip.context['works']: ###%s###" % snip.context['works'])
+# print("line [675] vim.eval(\"col('.')\"): ###%s###" % vim.eval("col('.')"))
+if snip.context['works'] == 0:
+	if int(vim.eval("col('.')")) - len(match.group(1)) - len(match.group(2)) - len(t[1]) <= 3:
+		name = match.group(2)
+		if name[0] == "\\":
+			name = "\\\\" + name[1:]
+		content = [match.group(1)]
+		# content = []
+		currentlinenumber = int(vim.eval("line('.')"))
+		max_line = 100
+		for index in range(currentlinenumber-1, max(0, currentlinenumber - max_line) if max_line > 0 else -1, -1):
+			content.append(snip.buffer[index-1])
+		# print("line [671] t[1]: ###%s###" % t[1])
+		# print("line [672] vim.eval(\"getline('.')\"): ###%s###" % vim.eval("getline('.')"))
+		# print("line [673] content: ###%s###" % content)
+		# print("line [674] vim.eval(\"col('.')\"): ###%s###" % vim.eval("col('.')"))
+		candidate = sum([[t[0] for t in re.findall("(?<=" + name  + r"_\{)(([^\{\}]+|\{[^\{\}]+\})+)(?=\})", x)][::-1] for x in content], [])
+		candidate = list(dict.fromkeys(candidate))
+		candidate = [x[len(t[1]):] for x in candidate if x.startswith(t[1]) and len(t[1]) < len(x)]
+		# print("line [679] candidate: ###%s###" % candidate)
+		if candidate:
+			snip.rv = candidate[0]
+		else:
+			snip.rv = " "
+		# # print("line [704] vim.eval(\"col('.')\"): ###%s###" % vim.eval("col('.')"))
+	elif int(vim.eval("col('.')")) - len(match.group(1)) - len(match.group(2)) - len(t[1]) > 3:
+		snip.context['works'] = snip.context['works'] + 1
+		# snip.rv = ""
+		# print("line [686] vim.eval(\"getline('.')\"): ###%s###" % vim.eval("getline('.')"))
+		# print("line [687] vim.eval(\"col('.')\"): ###%s###" % vim.eval("col('.')"))
+		# print("line [688] match.group(1): ###%s###" % match.group(1))
+		# print("line [689] match.group(2): ###%s###" % match.group(2))
+		# print("line [691] gap: ###%s###" % (int(vim.eval("col('.')")) - len(match.group(1)) - len(match.group(2)) - len(t[1])))
+		# print("line [684] snip.rv: ###%s###" % snip.rv)
+else:
+	snip.context['works'] = snip.context['works'] + 1
+`}$0
+endsnippet
+
+snippet ooo "\infty" iA
+\infty
+endsnippet
+
+snippet rij "mrij" i
+(${1:x}_${2:n})_{${3:$2}\\in${4:\\N}}$0
+endsnippet
+
+
+context "math()"
+snippet EE "exist" iA
+\exists
+endsnippet
+
+context "math()"
+snippet AA "forall" iA
+\forall 
+endsnippet
+
+context "math()"
+snippet xnn "xn" iA
+x_{n}
+endsnippet
+
+context "math()"
+snippet ynn "yn" iA
+y_{n}
+endsnippet
+
+
+# context "math()"
+# snippet xii "xi" iA
+# x_{i}
+# endsnippet
+
+priority 100
+context "math()"
+snippet "\b([a-zA-Z])ii" "?i" riA
+`!p snip.rv=match.group(1)`_{i}
+endsnippet
+
+priority 101
+context "math()"
+snippet "(\d[a-zA-Z]|\\mu|\\alpha|\\sigma|\\rho|\\beta|\\gamma|\\delta|\\zeta|\\eta|\\varepsilon|\\theta|\\iota|\\kappa|\\vartheta|\\lambda|\\nu|\\pi|\\rho|\\tau|\\upsilon|\\phi|\\chi|\\psi|\\omega|\\Gamma|\\Delta|\\Theta|\\Lambda|\\Xi|\\Pi|\\Sigma|\\Upsilon|\\Phi|\\Psi|\\Omega)ii" "?i" riA
+`!p snip.rv=match.group(1)`_{i}
+endsnippet
+
+priority 100
+context "math()"
+snippet "\b([a-zA-Z])jj" "?j" riA
+`!p snip.rv=match.group(1)`_{j}
+endsnippet
+
+priority 100
+context "math()"
+snippet "(\d[a-zA-Z]|\\mu|\\alpha|\\sigma|\\rho|\\beta|\\gamma|\\delta|\\zeta|\\eta|\\varepsilon|\\theta|\\iota|\\kappa|\\vartheta|\\lambda|\\nu|\\pi|\\rho|\\tau|\\upsilon|\\phi|\\chi|\\psi|\\omega|\\Gamma|\\Delta|\\Theta|\\Lambda|\\Xi|\\Pi|\\Sigma|\\Upsilon|\\Phi|\\Psi|\\Omega)jj" "?j" riA
+`!p snip.rv=match.group(1)`_{j}
+endsnippet
+
+# context "math()"
+# snippet yii "yi" iA
+# y_{i}
+# endsnippet
+
+# context "math()"
+# snippet xjj "xj" iA
+# x_{j}
+# endsnippet
+
+# context "math()"
+# snippet yjj "yj" iA
+# y_{j}
+# endsnippet
+
+priority 100000
+context "math()"
+snippet "\b([a-zA-Z])p(\d)" "x[n+1]" riA
+`!p snip.rv=match.group(1)`_{n+`!p snip.rv=match.group(2)`}
+endsnippet
+
+context "math()"
+snippet xmm "x" iA
+x_{m}
+endsnippet
+
+snippet R0+ "R0+" iA
+\\R_0^+
+endsnippet
+
+snippet plot "Plot" w
+\begin{figure}[$1]
+	\centering
+	\begin{tikzpicture}
+		\begin{axis}[
+			xmin= ${2:-10}, xmax= ${3:10},
+			ymin= ${4:-10}, ymax = ${5:10},
+			axis lines = middle,
+		]
+			\addplot[domain=$2:$3, samples=${6:100}]{$7};
+		\end{axis}
+	\end{tikzpicture}
+	\caption{$8}
+	\label{${9:$8}}
+\end{figure}
+endsnippet
+
+snippet nn "Tikz node" w
+\node[$5] (${1/[^0-9a-zA-Z]//g}${2}) ${3:at (${4:0,0}) }{$${1}$};
+$0
+endsnippet
+
+context "math()"
+snippet mcal "mathcal" i
+\mathcal{$1}$0
+endsnippet
+
+context "math()"
+snippet mbb "mathbb" i
+\mathbb{$1}$0
+endsnippet
+
+context "math()"
+snippet mrm "mathrm" i
+\mathrm{$1}$0
+endsnippet
+
+snippet lll "l" iA
+\ell
+endsnippet
+
+context "math()"
+snippet "(?<!\\)nabla" "nabla" irA
+\nabla 
+endsnippet
+
+context "math()"
+snippet xx "cross" iA
+\times 
+endsnippet
+
+priority 100
+snippet ** "star" iA
+^{*}
+endsnippet
+
+context "math()"
+snippet norm "norm" iA
+\|${1:${VISUAL}}\|_{2}$0
+endsnippet
+
+context "math()"
+snippet abs "abstract value" iA
+\left\vert ${1:${VISUAL}} \right\vert $0
+endsnippet
+
+priority 100
+context "math()"
+snippet '(?<!\\)(sin|cos|arccot|cot|csc|ln|log|exp|star|perp|geq|leq|quad|equiv|sup|inf|max|min)' "ln" rwA
+\\`!p snip.rv = match.group(1)`
+endsnippet
+
+context "math()"
+snippet "(?<![\\a-zA-Z])arg(max|min)" "argmin" wrA
+\mathop{\arg\\`!p snip.rv = match.group(1)`}
+endsnippet
+
+priority 300
+context "math()"
+snippet dint "integral" wA
+\int_{${1:-\infty}}^{${2:\infty}} ${3:${VISUAL}} \,\mathrm{d} $0
+endsnippet
+
+priority 200
+context "math()"
+snippet '(?<![\\a-zA-Z])(arcsin|arccos|arctan|arccot|arccsc|arcsec)' "ln" rwA
+\\`!p snip.rv = match.group(1)`
+endsnippet
+
+
+priority 100
+context "math()"
+snippet -> "to" iA
+\to 
+endsnippet
+
+priority 200
+context "math()"
+snippet <-> "leftrightarrow" iA
+\Leftrightarrow 
+endsnippet
+
+context "math()"
+snippet !> "mapsto" iA
+\mapsto 
+endsnippet
+
+context "math()"
+snippet invs "inverse" iA
+^{-1}
+endsnippet
+
+context "math()"
+snippet ' "prime" iA
+^\prime
+endsnippet
+
+context "math()"
+snippet compl "complement" iA
+^{c}
+endsnippet
+
+context "math()"
+snippet -- "setminus" iA
+\setminus
+endsnippet
+
+
+snippet ~~ "~" iA
+\sim 
+endsnippet
+
+context "math()"
+snippet set "set" wA
+\\{${1:$VISUAL}}\\} $0
+endsnippet
+
+snippet || "mid" iA
+ \mid 
+endsnippet
+
+
+context "math()"
+snippet cc "subset" bA
+\subseteq 
+endsnippet
+
+snippet notin "not in " iA
+\not\in 
+endsnippet
+
+context "math()"
+snippet inn "in " iA
+\in 
+endsnippet
+
+
+
+snippet Nn "cap" iA
+\cap 
+endsnippet
+
+snippet UU "cup" iA
+\cup 
+endsnippet
+
+snippet uuu "bigcup" iA
+\bigcup_{${1:i \in ${2: I}}} $0
+endsnippet
+
+snippet nnn "bigcap" iA
+\bigcap_{${1:i \in ${2: I}}} $0
+endsnippet
+
+snippet OO "emptyset" iA
+\O
+endsnippet
+
+snippet bbn "n" iA
+\mathbb{N}
+endsnippet
+
+snippet bbr "real" iA
+\mathbb{R}
+endsnippet
+
+snippet bbc "Probability" wA
+\mathbb{C}
+endsnippet
+
+snippet bbq "Q" iA
+\mathbb{Q}
+endsnippet
+
+snippet bbz "Z" iA
+\mathbb{Z}
+endsnippet
+
+snippet <! "normal" iA
+\triangleleft 
+endsnippet
+
+snippet <> "hokje" iA
+\diamond 
+endsnippet
+
+
+context "math()"
+snippet '(?<!i)sts' "text subscript" irA
+_\text{$1} $0
+endsnippet
+
+context "math()"
+snippet tt "text" iA
+\text{$1}$0
+endsnippet
+
+context "math()"
+snippet "(?<=\s)equation" "equation" wrA
+\begin{cases}
+	$1
+\end{cases}
+endsnippet
+
+context "math()"
+snippet "(?<=\s)case" "cases" wrA
+\begin{cases}
+	$1 & $2 \\
+	$3 & $4 \\
+\end{cases}
+endsnippet
+
+context "math()"
+snippet "bmatwo" "bmatwo" wrA
+\begin{bmatrix}
+	$1 & $2  \\
+	$3 & $4  \\       
+\end{bmatrix}
+endsnippet
+
+context "math()"
+snippet "bmathr" "bmathr" wrA
+\begin{bmatrix}
+	$1 & $2 & $3 \\
+	$4 & $5 & $6 \\
+ 	$7 & $8 & $9 \\              
+\end{bmatrix}
+endsnippet
+
+
+priority 100
+context "math()"
+snippet "(\\?[a-zA-Z]\w*)bar" "bar" riA
+\overline{`!p snip.rv=match.group(1)`}
+endsnippet
+
+# priority 10
+# context "math()"
+# snippet "hat" "hat" riA
+# \hat{$1}$0
+# endsnippet
+
+priority 100
+context "math()"
+snippet "(\\?[a-zA-Z]\w*)hat" "hat" riA
+\hat{`!p snip.rv=match.group(1)`}
+endsnippet
+
+priority 100
+context "math()"
+snippet "(\\?[a-zA-Z]\w*)bf" "mathbf" riA
+\mathbf{`!p snip.rv=match.group(1)`}
+endsnippet
+
+
+
+
+
+context "math()"
+snippet conv "convex composition" iA
+${1:\alpha} ${2:x} + (1 - $1) ${3:y}
+endsnippet
+
+context "math()"
+snippet range "i = 1, \ldots, n" iA
+${1:i} = ${2:1}, \ldots, ${3:n}
+endsnippet
+
+context "math()"
+snippet eps "epsilon" wA
+\epsilon
+endsnippet
+
+priority 100
+context "math()"
+snippet "(?<![\\a-zA-Z])(tr|diag|rank|lcm)" "math function" wr
+\\operatorname{`!p snip.rv = match.group(1)`}
+endsnippet
+
+priority 200
+context "math()"
+snippet "(?<![\\a-zA-Z])(mu|alpha|sigma|rho|beta|gamma|delta|zeta|eta|varepsilon|theta|iota|kappa|vartheta|lambda|nu|pi|rho|tau|upsilon|phi|chi|psi|omega|Gamma|Delta|Theta|Lambda|Xi|Pi|Sigma|Upsilon|Phi|Psi|Omega)" "greek" wrA
+\\`!p snip.rv = match.group(1)`
+endsnippet
+
+
+
+
+
+context "math()"
+snippet "(\\(overline|bar|hat|tilde|widetilde|widehat))(\{[\w_]*\})?" "next type of hat" wr
+`!p
+index = HatSequence.index(match.group(1))
+try:
+	snip.rv = HatSequence[(index + 1) % len(HatSequence)] + match.group(3)
+except:
+	snip.rv = HatSequence[(index + 1) % len(HatSequence)]
+`
+endsnippet
+
+context "math()"
+
+snippet "(\\(leftarrow|longleftarrow|Leftarrow|Longleftarrow))" "next type of left arrow" wr
+`!p
+symbol_list = LeftArrows
+index = symbol_list.index(match.group(1))
+snip.rv = symbol_list[(index + 1) % len(symbol_list)]
+`
+endsnippet
+
+context "math()"
+snippet "(\\(rightarrow|longrightarrow|Rightarrow|Longrightarrow))" "next type of right arrow" wr
+`!p
+symbol_list = RightArrows
+index = symbol_list.index(match.group(1))
+snip.rv = symbol_list[(index + 1) % len(symbol_list)]
+`
+endsnippet
+
+
+context "math()"
+snippet "(\\(leftrightarrow|longleftrightarrow|Leftrightarrow|Longleftrightarrow|iff))" "next type of left right arrow" wr
+`!p
+symbol_list = LeftrightArrows
+index = symbol_list.index(match.group(1))
+snip.rv = symbol_list[(index + 1) % len(symbol_list)]
+`
+endsnippet
+
+
+
+post_jump "add_placeholder(snip)"
+context "environment(lastemptyline = True)"
+snippet "^(\s+)" "auto insert something" wr
+`!p
+snip.rv = match.group(1)
+env_name = environment()
+line_number = int(vim.eval("line('.')"))
+last_line = vim.eval("getline(%d)" % (line_number-1))
+if any(env_name.startswith(x) for x in ["ali", "split"]):
+	try:
+		last_operator = extract_operator(re.fullmatch(r"[^&]*&(.*)", last_line).group(1))
+	except:
+		last_operator = ""
+	if last_line.split("&")[0].strip():
+		snip.rv += "$2 & ${1:%s} $3 \\\\\\\\" % last_operator
+	else:
+		snip.rv += "& ${1:%s} $3 \\\\\\\\" % last_operator
+elif re.search("matrix", env_name):
+	number = last_line.count("&") + 1
+	snip.rv += " & ".join("$%d" % x for x in range(1, number+1)) + "\\" * 4
+elif env_name == "enumerate":
+	snip.rv = " " * (len(last_line) - len(last_line.lstrip())) + "\item $1"
+`
+endsnippet
+
+post_expand "add_package('pgfplots')"
+# (\s*,\s*\[([+\-]?\d+\.?\d*)\s*,\s*([+\-]?\d+\.?\d*)\])\s*
+snippet "tplot\(([\da-zA-Z\s+\-*/\(\),\^]+)\)" "plot function" wr
+\begin{figure}
+\centering
+\begin{tikzpicture}
+\begin{axis}[samples=500,domain= ${1:-pi} : ${2:${1/-//g}} ,restrict y to domain = ${3:$1} : ${4:${3/-//g}}]
+\addplot[${5:blue}] plot ({\x},{`!p
+expression = match.group(1)
+expression = re.sub("(?<=\d)x", "*x", expression)
+expression = re.sub("(?<![a-zA-Z])x(?![a-zA-Z])", r"\\x", expression)
+pindexs = sorted([findmatched_parentheses(expression, x.span()[1]) for x in re.finditer(r"\bsin\b", expression)])
+expression = " r".join([expression[x:y] for x, y in zip([0] + pindexs, pindexs + [len(expression)])])
+expression = "max(min(%s, %s), %s)" % (expression, t[4], t[3])
+snip.rv = expression
+`});
+\end{axis}
+\end{tikzpicture}
+\end{figure}$0
+endsnippet
+
+post_expand "add_package('pgfplots')"
+snippet "addplot\(([\da-zA-Z\s+\-*/\(\),\^]+)\)" "add another function" wr
+\addplot[${1:`!p
+if not snip.c:
+	color = ['blue', 'red', 'yellow', 'orange', 'green', 'magenta']
+	usedcolor = []
+	for index in range(int(vim.eval("line('.')"))-1, 0, -1):
+		cline = vim.eval("getline(%d)" % index)
+		# print(index, cline)
+		ob = re.match(r"\\addplot\[([a-zA-Z]+)", cline)
+		if ob:
+			usedcolor.append(ob.group(1))
+		else:
+			break
+	notused = [x for x in color if x not in usedcolor]
+	if notused:
+		snip.rv = notused[0]
+	else:
+		snip.rv = "blue"
+`}] plot ({\x},{`!p
+expression = match.group(1)
+expression = re.sub("(?<=\d)x", "*x", expression)
+expression = re.sub("(?<![a-zA-Z])x(?![a-zA-Z])", r"\\x", expression)
+pindexs = sorted([findmatched_parentheses(expression, x.span()[1]) for x in re.finditer(r"\bsin\b", expression)])
+expression = " r".join([expression[x:y] for x, y in zip([0] + pindexs, pindexs + [len(expression)])])
+line_number = int(vim.eval("line('.')"))
+index = 1
+last_line = ""
+while index < line_number:
+	last_line = vim.eval("getline(%d)" % (line_number-index))
+	index += 1
+	ob = re.fullmatch(r".*,\s*([\w+\-.]+)\),\s*([\w+\-.]+)\)\}\);", last_line)
+	if ob:
+		break
+expression = "max(min(%s, %s), %s)" % (expression, ob.group(1), ob.group(2))
+snip.rv = expression
+`});$0
+endsnippet
+
+context "math()"
+snippet "^.*(\\right\s*[\)\]]|\S(?<!\\right)\s*[\)\]])" "snippet" wr
+`!p
+line = match.string
+left_parentheses = findmatched_parentheses(line, len(line) - 1)
+if match.group(1)[-1] == ")" and not re.fullmatch(r"\\right\s*\)", match.group(1)):
+	snip.rv += line[:left_parentheses] + "\\left(" + line[left_parentheses+1:-1] + "\\right)"
+elif match.group(1)[-1] == "]" and not re.fullmatch(r"\\right\s*\]", match.group(1)):
+	snip.rv += line[:left_parentheses] + "\\left[" + line[left_parentheses+1:-1] + "\\right]"
+elif match.group(1)[-1] == ")":
+	snip.rv += line[:left_parentheses].rstrip()[:-5] + "(" + line[left_parentheses+1:-1].rstrip()[:-6] + ")"
+else:
+	snip.rv += line[:left_parentheses].rstrip()[:-5] + "[" + line[left_parentheses+1:-1].rstrip()[:-6] + "]"
+`
+endsnippet
+
+# vim:ft=snippets

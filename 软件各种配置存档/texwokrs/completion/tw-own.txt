@@ -1,0 +1,118 @@
+%%!TEX encoding = UTF-8 Unicode
+--:=\textendash
+--:=\textendash\ 
+---:=\textemdash
+---:=\textemdash\ 
+
+fra:=\begin{frame}{}#RET# #INS# #RET#\end{frame}#RET# #RET#•
+
+en:=\begin{enumerate}{}#RET#\item #INS# #RET#\end{enumerate}#RET#•
+enl:=\begin{enumerate}{[(1)]}#RET#\item #INS# #RET#\end{enumerate}#RET#•
+eni:=\begin{enumerate}{[(i)]}#RET#\item #INS# #RET#\end{enumerate}#RET#•
+
+eq:=\begin{equation}#RET# #INS# #RET#\end{equation}#RET#•
+eqs:=\begin{equation*}#RET# #INS# #RET#\end{equation*}#RET#•
+eql:=\begin{equation}{\label()}#RET# #INS# #RET#\end{equation}#RET#•
+
+cas:=\begin{cases}#RET##INS##RET#\end{cases}#RET#•
+cen:=\begin{center}#RET##INS##RET#\end{center}#RET#•
+fig:=\begin{figure}#RET##INS##RET#\end{figure}#RET#•
+figo:=\begin{figure}[#INS#]#RET##RET#\end{figure}#RET#•
+spl:=\begin{split}#RET##INS##RET#\end{split}#RET#•
+
+(:=(#INS#) •
+[:=[#INS#] •
+{:={#INS#} •
+lr:=\left( #INS# \right) •
+lr:=\left[ #INS# \right] •
+lr:=\left\{ #INS# \right\} •
+
+matw:=\begin{bmatrix} #RET# #INS# & • \\#RET# • & • #RET# \end{bmatrix} #RET#•
+matw:=\begin{pmatrix} #RET# #INS# & #INS# \\#RET# #INS# & #INS# #RET# \end{pmatrix} #RET#•
+matw:=\begin{vmatrix} #RET# #INS# & #INS# \\#RET# #INS# & #INS# #RET# \end{vmatrix} #RET#•
+matw:=\begin{samllmatrix} #RET# #INS# & #INS# \\#RET# #INS# & #INS# #RET# \end{samllmatrix} #RET#•
+
+mathr:=\begin{bmatrix} #RET# #INS# & #INS# & #INS# \\#RET# #INS# & #INS# & #INS# \\#RET# #INS# & #INS# & #INS# #RET#\end{bmatrix} #RET#•
+mathr:=\begin{pmatrix} #RET# #INS# & #INS# & #INS# \\#RET# #INS# & #INS# & #INS# \\#RET# #INS# & #INS# & #INS# #RET#\end{pmatrix} #RET#•
+mathr:=\begin{vmatrix} #RET# #INS# & #INS# & #INS# \\#RET# #INS# & #INS# & #INS# \\#RET# #INS# & #INS# & #INS# #RET#\end{vmatrix} #RET#•
+mathr:=\begin{smallmatrix} #RET# #INS# & #INS# & #INS# \\#RET# #INS# & #INS# & #INS# \\#RET# #INS# & #INS# & #INS# #RET#\end{smallmatrix} #RET#•
+
+matf:=\begin{bmatrix} #RET# #INS# & #INS# & #INS# & #INS#\\#RET# #INS# & #INS# & #INS# & #INS#\\#RET# #INS# & #INS# & #INS# & #INS#\\#RET# #INS# & #INS# & #INS# & #INS# #RET#\end{bmatrix} #RET#•
+matf:=\begin{bmatrix} #RET#    #INS#   &   #INS#   &  \cdots &  #INS#\\#RET#    #INS#   &   #INS#   &  \cdots &  #INS#\\#RET#\vdots&\vdots &\ddots &\vdots \\#RET#     #INS# &     #INS# &  \cdots &#INS#   #RET#\end{bmatrix}
+matf:=\begin{pmatrix} #RET# #INS# & #INS# & #INS# & #INS#\\#RET# #INS# & #INS# & #INS# & #INS#\\#RET# #INS# & #INS# & #INS# & #INS#\\#RET# #INS# & #INS# & #INS# & #INS# #RET#\end{pmatrix} #RET#•
+matf:=\begin{pmatrix} #RET#    #INS#   &   #INS#   &  \cdots &  #INS#\\#RET#    #INS#   &   #INS#   &  \cdots &  #INS#\\#RET#\vdots&\vdots &\ddots &\vdots \\#RET#     #INS# &     #INS# &  \cdots &#INS#   #RET#\end{pmatrix}
+matf:=\begin{vmatrix} #RET# #INS# & #INS# & #INS# & #INS#\\#RET# #INS# & #INS# & #INS# & #INS#\\#RET# #INS# & #INS# & #INS# & #INS#\\#RET# #INS# & #INS# & #INS# & #INS# #RET#\end{vmatrix} #RET#•
+matf:=\begin{vmatrix} #RET#    #INS#   &   #INS#   &  \cdots &  #INS#\\#RET#    #INS#   &   #INS#   &  \cdots &  #INS#\\#RET#\vdots&\vdots &\ddots &\vdots \\#RET#     #INS# &     #INS# &  \cdots &#INS#   #RET#\end{vmatrix} #RET#•
+
+matfi:=\begin{bmatrix} #RET# #INS# & #INS# & #INS# & #INS# & #INS#\\#RET# #INS# & #INS# & #INS# & #INS# & #INS#\\#RET# #INS# & #INS# & #INS# & #INS# & #INS#\\#RET# #INS# & #INS# & #INS# & #INS# & #INS#\\#RET# #INS# & #INS# & #INS# & #INS# & #INS# #RET#\end{bmatrix} #RET#•
+matfi:=\begin{bmatrix} #RET# #INS# & #INS# & #INS# &\cdots & #INS#\\#RET# #INS# & #INS# & #INS# &\cdots & #INS#\\#RET# #INS# & #INS# & #INS# & \cdots & #INS#\\#RET# \vdots& \vdots &\vdots & \ddots & \vdots\\#RET# #INS# & #INS# & #INS# & \cdots & #INS# #RET#\end{bmatrix} #RET#•
+matfi:=\begin{pmatrix} #RET# #INS# & #INS# & #INS# & #INS# & #INS#\\#RET# #INS# & #INS# & #INS# & #INS# & #INS#\\#RET# #INS# & #INS# & #INS# & #INS# & #INS#\\#RET# #INS# & #INS# & #INS# & #INS# & #INS#\\#RET# #INS# & #INS# & #INS# & #INS# & #INS# #RET#\end{pmatrix} #RET#•
+matfi:=\begin{pmatrix} #RET# #INS# & #INS# & #INS# &\cdots & #INS#\\#RET# #INS# & #INS# & #INS# &\cdots & #INS#\\#RET# #INS# & #INS# & #INS# & \cdots & #INS#\\#RET# \vdots& \vdots &\vdots & \ddots & \vdots\\#RET# #INS# & #INS# & #INS# & \cdots & #INS# #RET#\end{pmatrix} #RET#•
+matfi:=\begin{vmatrix} #RET# #INS# & #INS# & #INS# & #INS# & #INS#\\#RET# #INS# & #INS# & #INS# & #INS# & #INS#\\#RET# #INS# & #INS# & #INS# & #INS# & #INS#\\#RET# #INS# & #INS# & #INS# & #INS# & #INS#\\#RET# #INS# & #INS# & #INS# & #INS# & #INS# #RET#\end{vmatrix} #RET#•
+matfi:=\begin{vmatrix} #RET# #INS# & #INS# & #INS# &\cdots & #INS#\\#RET# #INS# & #INS# & #INS# &\cdots & #INS#\\#RET# #INS# & #INS# & #INS# & \cdots & #INS#\\#RET# \vdots& \vdots &\vdots & \ddots & \vdots\\#RET# #INS# & #INS# & #INS# & \cdots & #INS# #RET#\end{vmatrix} #RET#•
+
+mats:=\begin{bmatrix} #RET# #INS# & #INS# & #INS# & #INS# & #INS#& #INS# \\#RET# #INS# & #INS# & #INS# & #INS# & #INS# & #INS# \\#RET# #INS# & #INS# & #INS# & #INS# & #INS# & #INS# \\#RET# #INS# & #INS# & #INS# & #INS# & #INS# & #INS# \\#RET# #INS# & #INS# & #INS# & #INS# & #INS# & #INS#\\#RET# #INS# & #INS# & #INS# & #INS# & #INS# & #INS# #RET#\end{bmatrix} #RET#•
+mats:=\begin{bmatrix} #RET# #INS# & #INS# & #INS# & \cdots & #INS#& #INS# \\#RET# #INS# & #INS# & #INS# & \cdots & #INS# & #INS# \\#RET# #INS# & #INS# & #INS# & \cdots & #INS# & #INS# \\#RET# \vdots & \vdots & \vdots & \ddots & \vdots & \vdots \\#RET# #INS# & #INS# & #INS# & \cdots & #INS# & #INS#\\#RET# #INS# & #INS# & #INS# & \cdots & #INS# & #INS# #RET#\end{bmatrix} #RET#•
+mats:=\begin{pmatrix} #RET# #INS# & #INS# & #INS# & #INS# & #INS#& #INS# \\#RET# #INS# & #INS# & #INS# & #INS# & #INS# & #INS# \\#RET# #INS# & #INS# & #INS# & #INS# & #INS# & #INS# \\#RET# #INS# & #INS# & #INS# & #INS# & #INS# & #INS# \\#RET# #INS# & #INS# & #INS# & #INS# & #INS# & #INS#\\#RET# #INS# & #INS# & #INS# & #INS# & #INS# & #INS# #RET#\end{pmatrix} #RET#•
+mats:=\begin{pmatrix} #RET# #INS# & #INS# & #INS# & \cdots & #INS#& #INS# \\#RET# #INS# & #INS# & #INS# & \cdots & #INS# & #INS# \\#RET# #INS# & #INS# & #INS# & \cdots & #INS# & #INS# \\#RET# \vdots & \vdots & \vdots & \ddots & \vdots & \vdots \\#RET# #INS# & #INS# & #INS# & \cdots & #INS# & #INS#\\#RET# #INS# & #INS# & #INS# & \cdots & #INS# & #INS# #RET#\end{pmatrix} #RET#•
+mats:=\begin{vmatrix} #RET# #INS# & #INS# & #INS# & #INS# & #INS#& #INS# \\#RET# #INS# & #INS# & #INS# & #INS# & #INS# & #INS# \\#RET# #INS# & #INS# & #INS# & #INS# & #INS# & #INS# \\#RET# #INS# & #INS# & #INS# & #INS# & #INS# & #INS# \\#RET# #INS# & #INS# & #INS# & #INS# & #INS# & #INS#\\#RET# #INS# & #INS# & #INS# & #INS# & #INS# & #INS# #RET#\end{vmatrix} #RET#•
+mats:=\begin{vmatrix} #RET# #INS# & #INS# & #INS# & \cdots & #INS#& #INS# \\#RET# #INS# & #INS# & #INS# & \cdots & #INS# & #INS# \\#RET# #INS# & #INS# & #INS# & \cdots & #INS# & #INS# \\#RET# \vdots & \vdots & \vdots & \ddots & \vdots & \vdots \\#RET# #INS# & #INS# & #INS# & \cdots & #INS# & #INS#\\#RET# #INS# & #INS# & #INS# & \cdots & #INS# & #INS# #RET#\end{vmatrix} #RET#•
+
+aa:=\vskip -13pt#RET#\[#RET#  #INS# #RET#\]#RET#\vskip -7pt#RET#•
+dd:=$ #INS# $ •
+
+
+thm:=\begin{thm}[]#RET# #INS# #RET#\end{thm} #RET#•
+lem:=\begin{lem}[]#RET# #INS# #RET#\end{lem} #RET#•
+defn:=\begin{dfen}[]#RET# #INS# #RET#\end{defn} #RET#•
+cor:=\begin{cor}[]#RET# #INS# #RET#\end{cor} #RET#•
+rmk:=\begin{rmk}[]#RET# #INS# #RET#\end{rmk} #RET#•
+exam:=\begin{exam}[]#RET# #INS# #RET#\end{exam} #RET#•
+exer:=\begin{exer}[]#RET# #INS# #RET#\end{exer} #RET#•
+prop:=\begin{prop}[]#RET# #INS# #RET#\end{prop} #RET#•
+ques:=\begin{ques}[]#RET# #INS# #RET#\end{ques} #RET#•
+con:=\begin{con}[]#RET# #INS# #RET#\end{con} #RET#•
+
+pf:=\begin{proof}[]#RET# #INS# #RET#\end{proof} #RET#•
+sol:=\begin{solution}[]#RET# #INS# #RET#\end{solution} #RET#•
+
+df:=\dfrac{#INS#}{•}
+tf:=\tfrac{#INS#}{•}
+cd:=\cdots
+vd:=\vdots
+dd:=\ddots
+leq:=\leqslant
+geq:=\geqslant
+sq:=\sqrt{#INS#}•
+qq:=\quad
+qqq:=\qquad
+st:=\stackref{#INS#}{•}
+la:=\label{#INS#}
+te:=\text{#INS#}
+it:=\item #INS#
+bb:=\mathbb{#INS#}
+bbc:=\mathbb{C}
+bbr:=\mathbb{R}
+bbq:=\mathbb{Q}
+bbz:=\mathbb{Z}
+bbn:=\mathbb{N}
+bbf:=\mathbb{F}
+bbp=\mathbb{P}
+jd:=\jd[#INS#]{•}
+suml:=\sum\limits_{#INS#}^{•} •
+prodl:=\prod\limits_{#INS#}^{•} •
+intl:=\int\limits_{#INS#}^{•} •
+iso:=\stackrel_{\sim}{\rightarrow} •
+ii:=\mathrm{i}
+ee:=\mathrm{e}
+rk:=\mathsf{rank}
+ol:=\overline{#INS#} •
+llra:=\Longleftrightarrow
+ra:=\rightarrow
+ker:=\mathsf{Ker}
+im:=\mathsf{Im}
+vp:=\vskip #INS# pt #RET#•
+bf:=\textbf{#INS#}
+em:=\emph{#INS#}
+it:=\item#RET##INS#
+ito:=\item[#INS#]#RET#

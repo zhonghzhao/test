@@ -1,0 +1,44 @@
+首先下载vim-plug文件，可以去github下载
+
+下载完成后将其复制到vim安装目录下C:\Program Files (x86)\Vim\vim82\autoload下，
+或者将其搁在~\vimfiles\autoload下，即可完成vim-plug的安装
+
+或者用git-bash-here 输入
+curl -fLo ~/.vim/autoload/plug.vim --create-dirs \
+    https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
+这里的路径不起作用，但是这个git可以成功，换成需要的路径就不成功，不知道为啥？
+
+打开_vimrc，记得用管理员权限加入如下插件内容：注意存储目录为vimfiles/plugin时会出现一大堆错误，
+
+call plug#begin('~/vimfiles/autoload')         
+  
+Plug 'lervag/vimtex'  
+Plug 'xuhdev/vim-latex-live-preview', { 'for': 'tex' }
+
+call plug#end()
+
+
+然后执行 :PlugInstall  命令, 就会执行
+
+可能是 Windows 下最漂亮的 Gvim 配置了可以使用，http://www.imooc.com/article/9689，注意下载Tomorrow-Night.vim 颜色于color目录下
+
+安装Plug 'sirver/UltiSnips'后用insert写文字就出现错误，原因是安装了最新的python，改成3.6.2就Ok了！
+
+语法没有高亮，可能是配色方案不对，换换配色方案可解决。
+
+UltiSnips是Vim的代码片段工具，它只是一个引擎，它需要和vim-snippets搭配使用。
+
+更好的方法是单独新建一个目录，专门保存自定义的代码片段。具体的操作方法是：D:\App\vimfiles\mysnippets建立文件夹，在 .vimrc 文件中指定代码片段搜索文件夹。
+let g:UltiSnipsSnippetDirectories=["UltiSnips","mysnippets"]
+在 mysnippets 文件夹中创建自己的代码片段文件。（zyt的配置不行，因为还有其他文件配合使用才能有用）
+完成了以上三步，只需要将 mysnippets 文件夹备份好，就可以很好的备份和管理自定义的代码片段了。
+
+手动添加反向搜索：
+C:\Program Files (x86)\Vim\vim82\gvim.exe --servername GVIM --remote-send "<C-\><C-n>:execute 'drop ' . fnameescape('%f')<CR>:%l<CR>:normal! zzzv<CR>:call remote_foreground('GVIM')<CR><CR>"
+
+
+切换xetex引擎的代码：
+function SetXeTex()
+    let g:Tex_CompileRule_pdf = 'xelatex -aux-directory=F:/Vim/my_latex_doc/temp --synctex=-1 -src-specials -interaction=nonstopmode $*'
+endfunction
+map <Leader>lx :<C-U>call SetXeTex()<CR>

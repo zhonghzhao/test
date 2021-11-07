@@ -1,0 +1,26 @@
+安装mma后将其加入系统变量path：C:\Program Files\Wolfram Research\Mathematica\12.0   
+注：mma安装时自动加入的 wolframscript也行，所以这一步可以省略
+
+安装两个插件：Wolfram Language Server  lsp-wl（kenkangxgwe and hxianglong，用于调用wolfram script）和wolfram language(shigma，用于命令补全和语法高亮)
+
+1.   gibhub上下载lsp-wl-develop，解压缩后改名为lsp-wl，将其放在C:\Users\dengdeng中，注意路径和名字对应起来，其实名字无所谓
+2.   mma的notebook中输入 
+PacletInstall["AST","UpdateSites" -> True]
+PacletInstall["Lint","UpdateSites" -> True]
+后台会下载，出现 Paclet[Lint-0.14 <>]表示成功了，可能要多试几次
+
+3.  vscode下wolfram  language server 中的设置
+Wolfram Language Server: WLServer Path
+Path to wolfram language server folder.
+
+C:/Users/Administrator/lsp-wl
+
+Wolfram Language Server: Wolfram Path
+Path to wolfram executable.
+
+C:/Program Files/Wolfram Research/Mathematica/12.0/wolfram.exe
+
+4.  lsp-wl中的文件覆盖原来C:\Users\dengdeng\.vscode\extensions\lsp-wl.lsp-wl-client-0.1.5中的文件，不清楚是否需要，如果前面不成功还是覆盖下。此条删除，最近一次设置证明不需要
+
+5.  Code-runner: Executor Map--Set the executor of each language 中加入 "wolfram": "wolfram -script"
+

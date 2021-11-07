@@ -1,0 +1,26 @@
+﻿win10获得管理员权限，可以改_vimrc 文件
+
+vim 的用户可以把安装asymptote目录下的asy.vim 复制到gVim的安装目录C:\Program Files (x86)\Vim\vim82\syntax下
+
+解决文本中文乱码和栏目乱码：在C:\Program Files\Vim 目录下的_vimrc 文件中添加
+
+augroup filetypedetect
+au BufNewFile,BufRead *.asy setf asy
+augroup END
+filetype plugin on
+
+
+用:make 编译和预览当前文件, 复制前面的asy.vim到C:\Program Files (x86)\Vim\vim82\ftplugin\asy.vim，清空内容后加入下面
+
+setlocal makeprg=asy\ %
+setlocal errorformat=%f:\ %l.%c:\ %m
+
+Vim默认保存文件路径的设置：在_vimrc文件中添加：
+exec 'cd ' . fnameescape('C:\Users\Administrator\Pictures\test')
+C:\Users\dengdeng\Pictures\test也可换成自己所需的路径，这样在vim中新建文件后直接用命令“ :w 文件名”就可以自动保存到已定义的路径
+
+另外下面的代码必须在上面augroup的前面，否则asymptote无法运行，不知道为啥？
+call plug#begin('~/vimfiles/plugin')
+Plug 'lervag/vimtex'  
+
+call plug#end()

@@ -1,0 +1,208 @@
+" Vim with all enhancements
+source $VIMRUNTIME/vimrc_example.vim
+
+" Use the internal diff if available.
+" Otherwise use the special 'diffexpr' for Windows.
+if &diffopt !~# 'internal'
+  set diffexpr=MyDiff()
+endif
+function MyDiff()
+  let opt = '-a --binary '
+  if &diffopt =~ 'icase' | let opt = opt . '-i ' | endif
+  if &diffopt =~ 'iwhite' | let opt = opt . '-b ' | endif
+  let arg1 = v:fname_in
+  if arg1 =~ ' ' | let arg1 = '"' . arg1 . '"' | endif
+  let arg1 = substitute(arg1, '!', '\!', 'g')
+  let arg2 = v:fname_new
+  if arg2 =~ ' ' | let arg2 = '"' . arg2 . '"' | endif
+  let arg2 = substitute(arg2, '!', '\!', 'g')
+  let arg3 = v:fname_out
+  if arg3 =~ ' ' | let arg3 = '"' . arg3 . '"' | endif
+  let arg3 = substitute(arg3, '!', '\!', 'g')
+  if $VIMRUNTIME =~ ' '
+    if &sh =~ '\<cmd'
+      if empty(&shellxquote)
+        let l:shxq_sav = ''
+        set shellxquote&
+      endif
+      let cmd = '"' . $VIMRUNTIME . '\diff"'
+    else
+      let cmd = substitute($VIMRUNTIME, ' ', '" ', '') . '\diff"'
+    endif
+  else
+    let cmd = $VIMRUNTIME . '\diff'
+  endif
+  let cmd = substitute(cmd, '!', '\!', 'g')
+  silent execute '!' . cmd . ' ' . opt . arg1 . ' ' . arg2 . ' > ' . arg3
+  if exists('l:shxq_sav')
+    let &shellxquote=l:shxq_sav
+  endif
+endfunction
+
+
+" Startup {{{
+filetype indent plugin on
+
+" vim 文件折叠方式为 marker
+augroup ft_vim
+    au!
+
+    au FileType vim setlocal foldmethod=marker
+augroup END
+" }}}
+
+" General {{{
+set nocompatible
+syntax enable       "允许使用语法高亮功能
+syntax on              "打开语法高亮
+set nobackup
+set noswapfile
+set history=1024
+set autochdir
+""set guifont=Consolas:h15:cANSI:qDRAFT
+set guifont=Courier\ New:h15
+set whichwrap=b,s,<,>,[,]
+set nobomb
+set backspace=indent,eol,start whichwrap+=<,>,[,]
+" Vim 的默认寄存器和系统剪贴板共享
+set clipboard+=unnamed
+" 设置 alt 键不映射到菜单栏
+set winaltkeys=no
+" }}}
+
+" Lang & Encoding {{{
+set fileencodings=utf-8,gbk2312,gbk,gb18030,cp936
+set encoding=utf-8
+set langmenu=zh_CN
+let $LANG = 'en_US.UTF-8'
+"language messages zh_CN.UTF-8
+" }}}
+
+" GUI {{{
+""colorscheme Tomorrow-Night
+colorscheme evening  ""desert 
+source $VIMRUNTIME/delmenu.vim
+source $VIMRUNTIME/menu.vim
+set cursorline
+set hlsearch
+set number
+" 窗口大小
+set lines=35 columns=140
+" 分割出来的窗口位于当前窗口下边/右边
+set splitbelow
+set splitright
+
+
+
+call plug#begin('~/vimfiles/autoload')
+Plug 'lervag/vimtex'  
+Plug 'sirver/UltiSnips'
+Plug 'honza/vim-snippets'
+Plug 'luochen1990/rainbow'
+Plug 'itchyny/lightline.vim'
+Plug 'preservim/nerdtree'
+Plug 'dense-analysis/ale'
+Plug 'vim-syntastic/syntastic'
+Plug 'Shougo/neocomplete'
+
+call plug#end()
+
+
+let g:tex_flavor='latex'    ""设置latex运行和阅读方法及反向搜索等
+let g:vimtex_view_general_viewer = 'SumatraPDF'
+let g:vimtex_view_general_options
+\ = '-reuse-instance -forward-search @tex @line @pdf'
+let g:vimtex_view_general_options_latexmk = '-reuse-instance'
+let g:vimtex_view_general_options
+\ = '-reuse-instance -forward-search @tex @line @pdf'
+\ . ' -inverse-search "' . exepath(v:progpath)
+\ . ' --servername ' . v:servername
+\ . ' --remote-send \"^<C-\^>^<C-n^>'
+\ . ':execute ''drop '' . fnameescape(''\%f'')^<CR^>'
+\ . ':\%l^<CR^>:normal\! zzzv^<CR^>'
+\ . ':call remote_foreground('''.v:servername.''')^<CR^>^<CR^>\""'
+
+"let g:vimtex_quickfix_mode=0
+"set conceallevel=1
+let g:tex_conceal='abdmg'
+
+
+
+
+
+let g:UltiSnipsExpandTrigger = '<tab>'
+let g:UltiSnipsJumpForwardTrigger = '<tab>'
+let g:UltiSnipsJumpBackwardTrigger = '<s-tab>'
+" If you want :UltiSnipsEdit to split your window.
+let g:UltiSnipsEditSplit="vertical"
+
+
+
+let g:rainbow_active =1    "set to 0 if you want to enable it later via :RainbowToggle
+
+set laststatus=2    ""显示lightline底部的状态栏
+
+nmap <F5> :NERDTreeToggle<cr>
+
+
+set statusline+=%#warningmsg#
+set statusline+=%{SyntasticStatuslineFlag()}
+set statusline+=%*
+
+let g:UltiSnipsSnippetDirectories=["UltiSnips","mysnippets"]
+
+let g:neocomplete#enable_at_startup = 1
+let g:neocomplete#enable_camel_case = 1
+let g:neocomplete#enable_auto_delimiter = 1
+let g:neocomplete#enable_auto_close_preview = 1
+
+let g:neocomplete#keyword_patterns = {}
+let g:neocomplete#sources#omni#input_patterns = {}
+
+let g:neocomplete#keyword_patterns.tex     = '[a-zA-ZæÆøØåÅ][0-9a-zA-ZæÆøØåÅ]\+'
+let g:neocomplete#sources#omni#input_patterns.tex =
+      \ '\v\\\a*(ref|cite)\a*([^]]*\])?\{([^}]*,)*[^}]*'
+
+augroup filetypedetect   ""设置运行asy
+au BufNewFile,BufRead *.asy setf asy
+augroup END
+filetype plugin on
+
+exec 'cd ' . fnameescape('C:\Users\Administrator\Pictures\test')    
+
+function! AutoPair(open, close)        
+    let line = getline('.')        
+    if col('.') > strlen(line) || line[col('.') - 1] == ' '
+                return a:open.a:close."\<ESC>i"
+        else
+                return a:open
+        endif
+endf
+function! ClosePair(char)        
+    if getline('.')[col('.') - 1] == a:char                
+                return "\<Right>"
+        else
+                return a:char
+        endif
+endf
+function! SamePair(char)        
+    let line = getline('.')        
+    if col('.') > strlen(line) || line[col('.') - 1] == ' '
+                return a:char.a:char."\<ESC>i"
+        elseif line[col('.') - 1] == a:char               
+                 return "\<Right>"
+        else
+                return a:char
+        endif
+endf
+
+inoremap ( <c-r>=AutoPair('(', ')')<CR>
+inoremap ) <c-r>=ClosePair(')')<CR>
+inoremap { <c-r>=AutoPair('{', '}')<CR>
+inoremap } <c-r>=ClosePair('}')<CR>
+inoremap [ <c-r>=AutoPair('[', ']')<CR>
+inoremap ] <c-r>=ClosePair(']')<CR>
+inoremap " <c-r>=SamePair('"')<CR>
+inoremap ' <c-r>=SamePair("'")<CR>
+inoremap ` <c-r>=SamePair('`')<CR>
+

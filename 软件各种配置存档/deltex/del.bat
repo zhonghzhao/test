@@ -1,0 +1,1 @@
+pythonw C:\deltex\deltex.pyw

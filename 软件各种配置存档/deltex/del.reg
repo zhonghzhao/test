@@ -1,0 +1,7 @@
+Windows Registry Editor Version 5.00
+
+[HKEY_CLASSES_ROOT\Directory\Background\shell\Tex_Delete]
+@="Tex Delete"
+
+[HKEY_CLASSES_ROOT\Directory\Background\shell\Tex_Delete\command]
+@="\"C:\\deltex\\del.bat\" \"%V\""
