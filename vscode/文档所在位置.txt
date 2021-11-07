@@ -1,0 +1,17 @@
+家里需要保留的snippet和settings位置
+C:\Users\Administrator\AppData\Roaming\Code\User
+
+办公室需要保留的snippet和settings位置
+C:\Users\dengdeng\AppData\Roaming\Code\User
+
+添加自动完成$ $功能需要如下修改
+
+C:\Users\Administrator\.vscode\extensions\james-yu.latex-workshop-8.19.2\syntax\syntax.json
+这个是以前版本的名字，现在已经换为下面的了
+
+办公室  james-yu.latex-workshop-8.21.1版本更新后为
+C:\Users\dengdeng\.vscode\extensions\james-yu.latex-workshop-8.21.1\syntax\latex-language-configuration.json
+注意与前一项的逗号分割
+
+家里   james-yu.latex-workshop-8.21.1版本更新后为
+C:\Users\Administrator\.vscode\extensions\james-yu.latex-workshop-8.21.1\syntax\latex-language-configuration.json

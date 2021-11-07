@@ -1,0 +1,15 @@
+{
+	"Begin Package": {
+		"prefix": "newpac",
+		"body": [
+			"BeginPackage[\"$1`\"]",
+			"$1::usage=\"$1 $2\"",
+			"Begin[\"`Private`\"] ",
+			"$3"
+			"End[ ]",
+			"Protect[$4]",
+			"EndPackage[ ]$0"
+		],
+		"description": "Construct New Package"
+	}
+}

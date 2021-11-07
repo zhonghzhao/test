@@ -1,0 +1,284 @@
+{"latex-workshop.showContextMenu":true,                //右键菜单
+    "latex-workshop.intellisense.package.enabled": true,  //根据加载的包，自动完成命令或包  
+    "latex-workshop.latex.autoBuild.run": "never",        //禁止保存文件时自动build  
+    "latex-workshop.latex.recipes": [  
+      {  
+        "name": "Pdflatexmk",  
+        "tools": [  
+          "platexmk"  
+        ]  
+      }, 
+      {  
+        "name": "Xelatexmk",  
+        "tools": [  
+          "xelatexmk"  
+        ]  
+      }, 
+      {  
+        "name": "Xelatex",  
+        "tools": [  
+          "xelatex"  
+        ]  
+      }, 
+      {  
+        "name": "Xelatex2",  
+        "tools": [  
+          "xelatex",
+          "xelatex"   
+        ]  
+      }, 
+      {  
+        "name": "Xe->Bibtex->Xe2",  
+        "tools": [  
+          "xelatex",  
+          "bibtex",  
+          "xelatex", 
+          "xelatex"
+        ]  
+      }, 
+      {  
+        "name": "Xe->Biber->Xe2",  
+        "tools": [  
+          "xelatex",  
+          "biber",  
+          "xelatex", 
+          "xelatex"
+        ]  
+      },
+      {  
+        "name": "Xe->Index->Xe",  
+        "tools": [  
+          "xelatex",
+          "makeindex",
+          "xelatex"  
+        ]  
+      },
+      {  
+        "name": "Pdflatex",  
+        "tools": [  
+          "pdflatex"  
+        ]  
+      },  
+      {  
+        "name": "Pdflatex2",  
+        "tools": [  
+          "pdflatex",
+          "pdflatex"
+        ]  
+      }, 
+      {  
+        "name": "Pdf->Bibtex->Pdf2 ",  
+        "tools": [  
+          "pdflatex",  
+          "bibtex",  
+          "pdflatex",  
+          "pdflatex"  
+        ]  
+      },  
+      {  
+        "name": "Pdf->Biber->Pdf2 ",  
+        "tools": [  
+          "pdflatex",  
+          "biber",  
+          "pdflatex",  
+          "pdflatex"  
+        ]  
+      }, 
+      {  
+        "name": "Pdf->Index->Pdf ",  
+        "tools": [  
+          "pdflatex",  
+          "makeindex", 
+          "pdflatex"  
+        ]  
+      }
+    ],  
+    "latex-workshop.latex.tools":[ 
+      {  
+        "name": "platexmk",  
+        "command": "latexmk",  
+        "args": [ 
+          "-synctex=1",  
+          "-interaction=nonstopmode",  
+          "-file-line-error",  
+          "-pdf",  
+          "-outdir=%OUTDIR%",  
+          "%DOCFILE%"
+        ],  
+        "env": {}  
+        }, 
+        {  
+          "name": "xelatexmk",  
+          "command": "latexmk",  
+          "args": [ 
+            "-synctex=1",  
+            "-interaction=nonstopmode",  
+            "-file-line-error",  
+            "-xelatex",  
+            "-outdir=%OUTDIR%",  
+            "%DOCFILE%"            
+          ],  
+          "env": {}  
+          },   
+        {  
+        "name": "pdflatex",  
+        "command": "pdflatex",  
+        "args": [  
+          "-shell-escape",
+          "-synctex=1",  
+          "-interaction=nonstopmode",  
+          "-file-line-error",  
+          "%DOCFILE%"  
+        ],  
+        "env": {}  
+        },  
+        {  
+        "name": "xelatex",  
+        "command": "xelatex",  
+        "args": [          
+          "-synctex=1",  
+          "-interaction=nonstopmode",  
+          "-file-line-error",  
+          "%DOCFILE%"  
+        ],  
+        "env": {}  
+        },  
+        {  
+        "name": "bibtex",  
+        "command": "bibtex",  
+        "args": [  
+          "%DOCFILE%"  
+        ],  
+        "env": {}  
+        },
+        {  
+          "name": "biber",  
+          "command": "biber",  
+          "args": [  
+            "%DOCFILE%"  
+          ],  
+          "env": {}  
+          },
+        {  
+          "name": "makeindex",  
+          "command": "makeindex",  
+          "args": [  
+            "%DOCFILE%"  
+          ],  
+          "env": {}  
+          }   
+    ],  
+    "latex-workshop.latex.magic.args": [
+      "-shell-escape",
+      "-synctex=1",
+      "-interaction=nonstopmode",
+      "-file-line-error",
+      "%DOCFILE%"
+    ], 
+    "latex-workshop.latex.autoClean.run": "onBuilt", //自动删除多余文件，删除后可能页码数据有误
+    "latex-workshop.latex.clean.fileTypes": [  //设定清理文件的类型  
+      "*.aux",  //可以记录页数的超链接，去掉后不显示页数
+      "*.bak",  
+     "*.bbl",  
+      "*.blg",  
+      "*.brf",  
+      "*.lof",  
+      "*.lot",  
+      "*.mw",    //latexalpha2产生的垃圾文件
+      "*.pre",  //latexalpha2产生的垃圾文件
+      ".latexalpha2_*.out",    //latexalpha2产生的垃圾文件
+      "*.thm", 
+      "*.ilg",
+      "*.xdv",  
+      "*.out",  
+      "*.toc",  
+      "*.acn",  
+      "*.acr",  
+      "*.alg",  
+      "*.glg",  
+      "*.glo",  
+      "*.gls",  
+      "*.ist",  
+      "*.fls",  
+      "*.log",  
+      "*.fdb_latexmk",  
+      "*.nav",  
+      "*.snm",     //如果不是最后一个，需要加英文的逗号
+      "*.idx",   //索引文件 
+      "*.ind",   //索引文件 
+      //"*.synctex.gz"    //反向搜索文件
+      "*.xml", 
+      "*.bcf",   
+    ],  
+    "latex-workshop.view.pdf.viewer": "external", //pdf文件的预览方式
+    "latex-workshop.view.pdf.external.viewer.command": "C:/Program Files/SumatraPDF/SumatraPDF.exe", // 注意修改路径
+    "latex-workshop.view.pdf.external.viewer.args": [
+        "%PDF%"
+    ],
+  
+    "latex-workshop.view.pdf.external.synctex": {                // **********
+      "command": "C:/Program Files/SumatraPDF/SumatraPDF.exe", // 注意修改路径
+      "args": [                                                // **********
+          "-forward-search",
+          "%TEX%",
+          "%LINE%",
+          "%PDF%"
+      ]
+  },
+  
+  
+  "editor.minimap.enabled": false,
+  "editor.fontSize": 18,
+  "editor.wordWrap": "on",
+  "window.zoomLevel": 0,
+  "WolframLanguageServer.WLServerPath": "C:/Users/Administrator/lsp-wl",
+  "WolframLanguageServer.WolframPath": "C:/Program Files/Wolfram Research/Mathematica/12.0/wolfram.exe",
+  "code-runner.executorMap": {
+    "javascript": "node",
+    "java": "cd $dir && javac $fileName && java $fileNameWithoutExt",
+    "c": "cd $dir && gcc $fileName -o $fileNameWithoutExt && $dir$fileNameWithoutExt",
+    "cpp": "cd $dir && g++ $fileName -o $fileNameWithoutExt && $dir$fileNameWithoutExt",
+    "objective-c": "cd $dir && gcc -framework Cocoa $fileName -o $fileNameWithoutExt && $dir$fileNameWithoutExt",
+    "php": "php",
+    "python": "python -u",
+    "perl": "perl",
+    "perl6": "perl6",
+    "ruby": "ruby",
+    "go": "go run",
+    "lua": "lua",
+    "groovy": "groovy",
+    "powershell": "powershell -ExecutionPolicy ByPass -File",
+    "bat": "cmd /c",
+    "shellscript": "bash",
+    "fsharp": "fsi",
+    "csharp": "scriptcs",
+    "vbscript": "cscript //Nologo",
+    "typescript": "ts-node",
+    "coffeescript": "coffee",
+    "scala": "scala",
+    "swift": "swift",
+    "julia": "julia",
+    "crystal": "crystal",
+    "ocaml": "ocaml",
+    "r": "Rscript",
+    "applescript": "osascript",
+    "clojure": "lein exec",
+    "haxe": "haxe --cwd $dirWithoutTrailingSlash --run $fileNameWithoutExt",
+    "rust": "cd $dir && rustc $fileName && $dir$fileNameWithoutExt",
+    "racket": "racket",
+    "scheme": "csi -script",
+    "ahk": "autohotkey",
+    "autoit": "autoit3",
+    "dart": "dart",
+    "pascal": "cd $dir && fpc $fileName && $dir$fileNameWithoutExt",
+    "d": "cd $dir && dmd $fileName && $dir$fileNameWithoutExt",
+    "haskell": "runhaskell",
+    "nim": "nim compile --verbosity:0 --hints:off --run",
+    "lisp": "sbcl --script",
+    "kit": "kitc --run",
+    "v": "v run",
+    "wolfram": "wolfram -script",
+    "asymptote": "asy"
+  },
+  "security.workspace.trust.enabled": false
+  }

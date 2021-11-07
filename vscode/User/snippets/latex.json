@@ -1,0 +1,595 @@
+{  
+   //环境模板
+	"begend": {
+		"prefix": "beg",
+		"body": "\\begin{$1}\n\t$0\n\\end{$1}",
+		"description": "begin a new environment"
+	},
+	"frame": {
+		"prefix": "fra",
+		"body": "\\begin{frame}{}\n\t$0\n\\end{frame}",
+		"description": "Insert a new frame"
+	},
+	"equation": {
+		"prefix": "eq",
+		"body": "\\begin{equation}\n\t$0\n\\end{equation}",
+		"description": "Insert an equation environment"
+	},
+	"equation*": {
+		"prefix": "eqs",
+		"body": "\\begin{equation*}\n\t$0\n\\end{equation*}",
+		"description": "Insert an equation* environment"
+	},	
+    "equationlabel": {
+		"prefix": "eql",
+		"body": "\\begin{equation}{\\label($1)}\n\t$0\n\\end{equation}",
+		"description": "Insert an equation* environment"
+	},	
+	"enumerate": {
+		"prefix": "en",
+		"body": "\\begin{enumerate}\n\t\\item $0\n\\end{enumerate}",
+		"description": "Insert an enumerate environment"
+	},
+	"enumeratei": {
+		"prefix": "eni",
+		"body": "\\begin{enumerate}[(i)]\n\t\\item $0\n\\end{enumerate}",
+		"description": "Insert an enumerate environment"
+	},
+	"enumerate1": {
+		"prefix": "en1",
+		"body": "\\begin{enumerate}[(1)]\n\t\\item $0\n\\end{enumerate}",
+		"description": "Insert an enumerate environment"
+	},
+    "cases": {
+        "prefix": "cas",
+        "body": [
+            "\\begin{cases}",
+            "\t$1, & $2 \\\\\\\\",
+            "\t$3, & $0",
+            "\\end{cases}"
+        ],
+        "description": "insert cases evi"
+    },
+
+	"split": {
+		"prefix": "spl",
+		"body": "\\begin{split}\n\t$0\n\\end{split}",
+		"description": "Insert a split environment"
+	},
+
+	"figure": {
+		"prefix": "fig",
+		"body": "\\begin{figure}[${1:htbp}]\n\t\\centering\n\t$0\n\t\\caption{${2:<caption>}}\n\t\\label{${3:<label>}}\n\\end{figure}",
+		"description": "Insert a new figure"
+	},
+	"tikzpicture": {
+		"prefix": "tikz",
+		"body": "\\begin{tikzpicture}\n\t$0\n\\end{tikzpicture}",
+		"description": "Insert a new figure"
+	},
+    "itemize": {
+        "prefix": "item",
+        "body": [
+            "\\\\begin{itemize}",
+            "\t\\item $0",
+            "\\\\end{itemize}"
+        ],
+        "description": "itemize"
+    },
+         "matrix": {
+        "prefix": "mat",
+        "body": [
+            "\\begin{${1:p/b/v/V/B/small}matrix}",
+            "\t$0",
+            "\\end{${1:p/b/v/V/B/small}matrix}"
+        ],
+        "description": "matrix"
+	},
+	
+	"matrix2": {
+        "prefix": "mat2",
+        "body": [
+            "\\begin{${1:p/b/v/V/B/small}matrix}",
+			"\t$2  & \t $3 \\\\\\\\",
+			"\t$4  & \t $5" ,
+			"\\end{${1:p/b/v/V/B/small}matrix}"
+        ],
+        "description": "matrix2"
+	},
+	
+	"matrix3": {
+        "prefix": "mat3",
+        "body": [
+            "\\begin{${1:p/b/v/V/B/small}matrix}",
+			"\t$2  & \t $3 & \t $4\\\\\\\\" ,
+			"\t$5  & \t $6 & \t $7\\\\\\\\" ,
+			"\t$8  & \t $9 & \t $10" ,
+            "\\end{${1:p/b/v/V/B/small}matrix}"
+        ],
+        "description": "matrix3"
+	},
+	"matrix4": {
+        "prefix": "mat4",
+        "body": [
+            "\\begin{${1:p/b/v/V/B/small}matrix}",
+			"\t$2     & \t $3    & \t$4    & \t$5 \\\\\\\\" ,
+			"\t$6     & \t $6    & \t $7   & \t$8 \\\\\\\\" ,
+			"\t $9    & \t $10   & \t $11  & \t $12  \\\\\\\\" ,
+			"\t$13    & \t $14   & \t $15  & \t$16 \\\\\\\\" ,
+            "\\end{${1:p/b/v/V/B/small}matrix}"
+        ],
+        "description": "matrix4"
+	},
+	"matrix44": {
+        "prefix": "mat44",
+        "body": [
+            "\\begin{${1:p/b/v/V/B/small}matrix}",
+			"\t$2     & \t $3    & \\cdots   & \t$4 \\\\\\\\" ,
+			"\t$5     & \t $6    & \\cdots   & \t$7 \\\\\\\\" ,
+			"\\vdots  & \\vdots  & \\ddots   & \\vdots  \\\\\\\\" ,
+			"\t$8     & \t $9    & \\cdots   & \t$10 \\\\\\\\" ,
+            "\\end{${1:p/b/v/V/B/small}matrix}"
+        ],
+        "description": "matrix44"
+	},
+	"matrix5": {
+        "prefix": "mat5",
+        "body": [
+            "\\begin{${1:p/b/v/V/B/small}matrix}",
+			"\t$2     & \t $3    & \\cdots   & \t$4     &\t$5  \\\\\\\\" ,
+			"\t$6     & \t $7    & \\cdots   & \t$8     &\t$9  \\\\\\\\" ,
+			"\t$10    & \t $11   & \\cdots   & \t$12    &\t$13  \\\\\\\\" ,
+			"\\vdots  & \\vdots  & \\ddots   & \\vdots  &\\vdots \\\\\\\\" ,
+			"\t$14    & \t $15   & \\cdots   & \t$16    &\t$17  \\\\\\\\" ,
+            "\\end{${1:p/b/v/V/B/small}matrix}"
+        ],
+        "description": "matrix5"
+	},
+	"matrix55": {
+        "prefix": "mat55",
+        "body": [
+            "\\begin{${1:p/b/v/V/B/small}matrix}",
+			"\t$2     & \t $3    & \t$4      & \\cdots      &\t$5  \\\\\\\\" ,
+			"\t$6     & \t $7    & \t$8      & \\cdots      &\t$9  \\\\\\\\" ,
+			"\t$10    & \t $11   & \t$12     & \\cdots      &\t$13 \\\\\\\\" ,
+			"\\vdots  & \\vdots  & \\vdots   & \\ddots      &\\vdots \\\\\\\\" ,
+			"\t$14    & \t $15   & \t$16     & \\cdots      &\t$17  \\\\\\\\" ,
+            "\\end{${1:p/b/v/V/B/small}matrix}"
+        ],
+        "description": "matrix55"
+	},
+	"matrix6": {
+        "prefix": "mat6",
+        "body": [
+            "\\begin{${1:p/b/v/V/B/small}matrix}",
+			"\t$2     & \t $3    & \t$4    & \\cdots    &\t$5     &\t$6 \\\\\\\\" ,
+			"\t$7     & \t $8    & \t$9    & \\cdots    &\t$10    &\t$11 \\\\\\\\" ,
+			"\t$12    & \t $13   & \t$14   & \\cdots    &\t$15    &\t$16 \\\\\\\\" ,
+			"\\vdots  & \\vdots  & \\vdots & \\ddots    &\\vdots  & \\vdots \\\\\\\\" ,
+			"\t$17    & \t $18   & \t$19   & \\cdots    &\t$20    &\t$21 \\\\\\\\" ,
+			"\t$22    & \t $22   & \t$23   & \\cdots    &\t$24    &\t$25 \\\\\\\\" ,
+            "\\end{${1:p/b/v/V/B/small}matrix}"
+        ],
+        "description": "matrix6"
+	},
+	"matrix66": {
+        "prefix": "mat66",
+        "body": [
+            "\\begin{${1:p/b/v/V/B/small}matrix}",
+			"\t$2     & \t $3    & \t$4    &\t$5        &\\cdots  &\t$6 \\\\\\\\" ,
+			"\t$7     & \t $8    & \t$9    &\t$10       & \\cdots &\t$11 \\\\\\\\" ,
+			"\t$12    & \t $13   & \t$14   &\t$15       & \\cdots &\t$16 \\\\\\\\" ,
+			"\\vdots  & \\vdots  & \\vdots &\\vdots     & \\ddots &\\vdots \\\\\\\\" ,
+			"\t$17    & \t $18   & \t$19   &\t$20       & \\cdots &\t$21 \\\\\\\\" ,
+			"\t$22    & \t $22   & \t$23   &\t$24       & \\cdots &\t$25 \\\\\\\\" ,
+            "\\end{${1:p/b/v/V/B/small}matrix}"
+        ],
+        "description": "matrix66"
+	},
+	// "lr": {
+	// 	"prefix": "lr",
+	// 	"body": "\\left{$1}\n\t$0\n\\right{$1} ",
+	// 	"description": "Insert left ... right eviment"
+	// },
+	"lr(": {
+		"prefix": "lr(",
+		"body": "\\left( $1 \\right ",
+		"description": "Insert left( ... right)"
+	},
+	"lr{": {
+		"prefix": "lr{",
+		"body": "\\left\\{ $1 \\right\\",
+		"description": "Insert left{ ... right}"
+	},
+	"lr[": {
+		"prefix": "lr[",
+		"body": "\\left[ $1 \\right ",
+		"description": "Insert left[ ... right]"
+	},
+	// "$$": {
+	// 	"prefix": "\\",
+	// 	"body": "\\$$0\\$",
+	// 	"description": "Insert $...$"
+	// },
+	"\\[ \\] ": {
+		"prefix": "aa",
+		"body": [ 
+			"\\vskip -13 pt",			
+			"\\\\[",
+		    "\t$0",
+			"\\\\]",
+			"\\vskip -7 pt",	
+		],
+		"description": "Insert \\[...\\]"
+	},
+	"lemma": {
+		"prefix": "lem",
+		"body": "\\begin{lem}[]{${1}}\n\t$0\n\\end{lem}",
+		"description": "Insert a new lemma"
+	},
+	"theorem": {
+		"prefix": "thm",
+		"body": "\\begin{thm}[]{${1}}\n\t$0\n\\end{thm}",
+		"description": "Insert a new theorem"
+	},
+	"proposition": {
+		"prefix": "prop",
+		"body": "\\begin{prop}[]\n\t$0\n\\end{prop}",
+		"description": "Insert a new propostion"
+	},
+	"definition": {
+		"prefix": "defn",
+		"body": "\\begin{defn}[]\n\t$0\n\\end{defn}",
+		"description": "Insert a new definition"
+	},
+	"corollary": {
+		"prefix": "cor",
+		"body": "\\begin{cor}[]\n\t$0\n\\end{cor}",
+		"description": "Insert a new corollary"
+	},
+	"remark": {
+		"prefix": "rmk",
+		"body": "\\begin{rmk}[]\n\t$0\n\\end{rmk}",
+		"description": "Insert a new remark"
+	},
+	"exam": {
+		"prefix": "exam",
+		"body": "\\begin{exam}[]\n\t$0\n\\end{exam}",
+		"description": "Insert a new example"
+	},
+	"exer": {
+		"prefix": "exer",
+		"body": "\\begin{exer}[]\n\t$0\n\\end{exer}",
+		"description": "Insert a new exeriser"
+	},
+	"question": {
+		"prefix": "ques",
+		"body": "\\begin{ques}[]\n\t$0\n\\end{ques}",
+		"description": "Insert a new question"
+	},
+	"conclusion": {
+		"prefix": "con",
+		"body": "\\begin{con}[]\n\t$0\n\\end{con}",
+		"description": "Insert a new con"
+	},
+	"proof": {
+		"prefix": "pf",
+		"body": "\\begin{proof}\n\t$0\n\\end{proof}",
+		"description": "Insert a new proof"
+	},
+	"solution": {
+		"prefix": "sol",
+		"body": "\\begin{sol}\n\t$0\n\\end{sol}",
+		"description": "Insert a new solution"
+	},
+
+
+      //希腊字母
+	"alpha": {
+		"prefix": "az",
+		"body": [
+			"\\alpha",
+		],
+		"description": "alpha"
+	},  
+
+	"beta": {
+		"prefix": "bz",
+		"body": [
+			"\\beta",
+		],
+		"description": "beta"
+	},  
+	"gamma": {
+		"prefix": "gz",
+		"body": [
+			"\\gamma",
+		],
+		"description": "gamma"
+	},  
+	"theta": {
+		"prefix": "tz",
+		"body": [
+			"\\theta",
+		],
+		"description": "theta"
+	},  
+   "delta": {
+	"prefix": "dz",
+	"body": [
+		"\\delta",
+	],
+	"description": "delta"
+	},
+	
+	"lambda": {
+		"prefix": "lz",
+		"body": [
+			"\\lambda",
+		],
+		"description": "lambda"
+	},
+	"sigma": {
+		"prefix": "sz",
+		"body": [
+			"\\sigma",
+		],
+		"description": "sigma"
+	},
+	"varphi": {
+		"prefix": "vz",
+		"body": [
+			"\\varphi",
+		],
+		"description": "varphi"
+	},
+
+	//常用命令
+	"dfraction": {
+		"prefix": "df",
+		"body": "\\dfrac{$1}{$2}$0",
+		"description": "Insert a fraction"
+	},
+	"fraction2": {
+		"prefix": "tf",
+		"body": "\\tfrac{$1}{$2}$0",
+		"description": "Insert a fraction"
+	},
+	"infin": {
+		"prefix": "oo",
+		"body": "\\infty ",
+		"description": "Insert infinity symbol"
+	},
+	"cdots": {
+		"prefix": "cd",
+		"body": "\\cdots",
+		"description": "Insert \\cdots"
+	},
+	"vdots": {
+		"prefix": "vd",
+		"body": "\\vdots",
+		"description": "Insert \\vdots"
+	},
+	"ddots": {
+		"prefix": "dd",
+		"body": "\\ddots",
+		"description": "Insert \\ddots"
+	},
+	"leqslant": {
+		"prefix": "leq",
+		"body": "\\leqslant",
+		"description": "Insert leqslant symbol"
+	},
+	"geqslant": {
+		"prefix": "geq",
+		"body": "\\geqslant",
+		"description": "Insert geqslant symbol"
+	},
+	"sqrt": {
+		"prefix": "sq",
+		"body": "\\sqrt{$1}$0",
+		"description": "Insert sqrt command"
+	},
+	"quad": {
+		"prefix": "qq",
+		"body": "\\quad$0",
+		"description": "Insert quad command"
+	},
+	"qquad": {
+		"prefix": "qqq",
+		"body": "\\qquad$0",
+		"description": "Insert qquad command"
+	},
+	"stackrel": {
+		"prefix": "st",
+		"body": "\\stackrel{$1}{$2}$0",
+		"description": "Insert quad command"
+	},
+	"label": {
+		"prefix": "la",
+		"body": "\\label{$1} $0",
+		"description": "Insert label command"
+	},
+	"text": {
+		"prefix": "te",
+		"body": "\\text{$1} $0",
+		"description": "Insert text command"
+	},
+	"item": {
+		"prefix": "it",
+		"body": "\\item $0",
+		"description": "Insert item command"
+	},
+	"determint": {
+		"prefix": "det",
+		"body": "\\text{det}$0",
+		"description": "Insert determint command"
+	},
+	"mathbb{}": {
+		"prefix": "bb",
+		"body": "\\mathbb{$1}$0",
+		"description": "Insert mathbb command"
+	},
+	"mathbb{C}": {
+		"prefix": "bbc",
+		"body": "\\mathbb{C}$0",
+		"description": "Insert mathbb{C} command"
+	},
+	"mathbb{R}": {
+		"prefix": "bbr",
+		"body": "\\mathbb{R}$0",
+		"description": "Insert mathbb{R} command"
+	},
+	"mathbb{Q}": {
+		"prefix": "bbq",
+		"body": "\\mathbb{Q}$0",
+		"description": "Insert mathbb{Q} command"
+	},
+	"mathbb{Z}": {
+		"prefix": "bbz",
+		"body": "\\mathbb{Z}$0",
+		"description": "Insert mathbb{Z} command"
+	},
+	"mathbb{N}": {
+		"prefix": "bbn",
+		"body": "\\mathbb{N}$0",
+		"description": "Insert mathbb{N} command"
+	},
+	"mathbb{F}": {
+		"prefix": "bbf",
+		"body": "\\mathbb{F}$0",
+		"description": "Insert mathbb{F} command"
+	},
+	"mathbb{P}": {
+		"prefix": "bbp",
+		"body": "\\mathbb{P}$0",
+		"description": "Insert mathbb{P} command"
+	},
+	"jd": {
+		"prefix": "jd",
+		"body": "\\jd[$1]{$2}$0",
+		"description": "Insert jd command"
+	},
+	"sumlimit": {
+		"prefix": "suml",
+		"body": "\\sum\\limits_{$1}^{$2}$0",
+		"description": "Insert sumlimits command"
+	},
+	"prodlimit": {
+		"prefix": "prodl",
+		"body": "\\prod\\limits_{$1}^{$2}$0",
+		"description": "Insert prodlimits command"
+	},
+	"intlimit": {
+		"prefix": "intl",
+		"body": "\\int\\limits_{$1}^{$2}$0",
+		"description": "Insert intlimits command"
+	},
+	"isomorphism": {
+		"prefix": "iso",
+		"body": "\\\\stackrel{_\\sim}{\\rightarrow}",
+		"description": "Insert isomorphism command"
+	},
+	"imagaine number i": {
+		"prefix": "ii",
+		"body": "\\\\mathrm{i}",
+		"description": "Insert imaginary i command"
+	},
+	"nature number e": {
+		"prefix": "ee",
+		"body": "\\\\mathrm{e}",
+		"description": "Insert nature number e command"
+	},
+	"rank": {
+		"prefix": "rk",
+		"body": "\\\\mathsf{rank}",
+		"description": "Insert mathsf{rank} command"
+	},
+	"\\{ \\}": {
+		"prefix": "se",
+		"body": "\\\\{ $1 \\\\}$0",
+		"description": "Insert \\{ \\} "
+	},
+	"\\overline": {
+		"prefix": "ol",
+		"body": "\\\\overline{$1}$0",
+		"description": "Insert \\overline "
+	},
+	"Longleftrightarrow": {
+		"prefix": "llra",
+		"body": "\\\\Longleftrightarrow ",
+		"description": "Insert Longleftrightarrow "
+	},
+	"rightarrow": {
+		"prefix": "ra",
+		"body": "\\\\rightarrow ",
+		"description": "Insert rightarrow "
+	},	
+	"Kernel": {
+		"prefix": "ker",
+		"body": "\\\\mathsf{Ker}",
+		"description": "Insert Ker "
+	},
+	"Im": {
+		"prefix": "im",
+		"body": "\\\\mathsf{Im}",
+		"description": "Insert Im"
+	},
+	"vskip": {
+		"prefix": "vp",
+		"body": "\\\\vskip $1 pt $0",
+		"description": "Insert vskip  pt"
+	},
+	"linearequmn": {
+		"prefix": "lineqmn",
+		"body": [
+			"\\begin{cases}",
+			"a_{11}x_1+a_{12}x_2+\\cdots+a_{1n}x_n=b_1,\\\\\\\\ ",
+			"a_{21}x_1+a_{22}x_2+\\cdots+a_{2n}x_n=b_2,\\\\\\\\ ",
+			"\\qquad\\qquad\\cdots \\cdots \\cdots\\\\\\\\",
+			"a_{m1}x_1+a_{m2}x_2+\\cdots+a_{mn}x_n=b_m,\\\\\\\\",
+			"\\end{cases}"
+		],
+		"description": "Insert linear equation of m*n"
+	},
+	"linearequnn": {
+		"prefix": "lineqnn",
+		"body": [
+			"\\begin{cases}",
+			"a_{11}x_1+a_{12}x_2+\\cdots+a_{1n}x_n=b_1,\\\\\\\\ ",
+			"a_{21}x_1+a_{22}x_2+\\cdots+a_{2n}x_n=b_2,\\\\\\\\ ",
+			"\\qquad\\qquad\\cdots \\cdots \\cdots\\\\\\\\",
+			"a_{n1}x_1+a_{n2}x_2+\\cdots+a_{nn}x_n=b_n,\\\\\\\\",
+			"\\end{cases}"
+		],
+		"description": "Insert linear equation of n*n"
+	},
+	"detnn": {
+		"prefix": "detnn",
+		"body": [
+			"\\begin{vmatrix}",
+			"a_{11}  & a_{12}  & \\cdots  & a_{1n}\\\\\\",
+			"a_{21} & a_{22}     & \\cdots & a_{2n}\\\\\\",
+		    "\\vdots  & \\vdots  & \\ddots & \\vdots\\\\\\",
+			"a_{n1}  & a_{n2} & \\cdots & a_{nn}\\\\\\",
+		    "\\end{vmatrix}"
+		],
+		"description": "Insert determint n*n"
+	},
+	"nvea": {
+		"prefix": "nvea",
+		"body": [
+			"(a_1,a_2,\\cdots,a_n)",
+		],
+		"description": "Insert n dimvec a_i"
+	},
+	"nveb": {
+		"prefix": "nveb",
+		"body": [
+			"(b_1,b_2,\\cdots,b_n)",
+		],
+		"description": "Insert n dimvec b_i"
+	},
+
+
+}
